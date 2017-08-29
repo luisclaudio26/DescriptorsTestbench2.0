@@ -5,52 +5,73 @@
 #include <iostream>
 
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/features/feature.h>
+#include <pcl/search/kdtree.h>
 
-/*
-static void loadCloud(const std::string& path, const std::string& gt, Cloud& out)
+#include <pcl/features/shot_omp.h>
+#include <pcl/features/impl/shot_omp.hpp>
+
+//Callbacks of FeatureInitializer type should downcast
+//pcl::Feature to the derived class in question and then
+//set the parameters using the Cloud.
+template<typename PointOutT>
+using FeatureInitializer = void(*)(const Cloud&, pcl::Feature<pcl::PointXYZRGB,PointOutT>&);
+
+template<typename PointOutT>
+static void computeDescriptors(const Cloud& in, FeatureInitializer<PointOutT> initFeature,
+								pcl::Feature<pcl::PointXYZRGB,PointOutT>& featureEstimation,
+								const typename pcl::PointCloud<PointOutT>::Ptr& out)
 {
-	std::cout<<"Loading model\n";
+	//set descriptor engine parameters
+	initFeature(in, featureEstimation);
 
-	//load model
-	pcl::PolygonMesh mesh; pcl::io::loadPolygonFilePLY(path, mesh);
+	pcl::search::KdTree<pcl::PointXYZRGB>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGB>());
+	kdtree->setInputCloud(in.keypoints.p);
 
-	//initialize point clouds
-	out.points.p = pcl::PointCloud<pcl::PointXYZRGB>::Ptr( new pcl::PointCloud<pcl::PointXYZRGB>() );
-	out.points.n = pcl::PointCloud<pcl::Normal>::Ptr( new pcl::PointCloud<pcl::Normal>() );
-	out.keypoints.p = pcl::PointCloud<pcl::PointXYZRGB>::Ptr( new pcl::PointCloud<pcl::PointXYZRGB>() );
-	out.keypoints.n = pcl::PointCloud<pcl::Normal>::Ptr( new pcl::PointCloud<pcl::Normal>() );
-
-	out.meshes = mesh.polygons; //TODO: this is a copy, but maybe could be a move
-
-	pcl::fromPCLPointCloud2<pcl::PointXYZRGB>(mesh.cloud, *(out.points.p));
+	//general parameters
+	featureEstimation.setSearchMethod(kdtree);
+	featureEstimation.setInputCloud(in.keypoints.p);
+	featureEstimation.setSearchSurface(in.points.p);
+	
+	featureEstimation.compute(*out);
 }
 
-static void preprocessCloud(Cloud& C)
+template<typename PointOutT>
+static void benchmarkDescriptor(const TestCase& in, FeatureInitializer<PointOutT> initFeature,
+								pcl::Feature<pcl::PointXYZRGB, PointOutT>& featureEstimation)
 {
-	using namespace Preprocessing;
+	//1. Compute descriptors for keypoints in scene
+	typename pcl::PointCloud<PointOutT>::Ptr scene_desc( new pcl::PointCloud<PointOutT>() );
+	computeDescriptors(in.scene, initFeature, featureEstimation, scene_desc);
 
-	std::cout<<"Computing basic values\n";
-	C.resolution = computeResolution(C.points.p);
-	C.area = computeArea(C);
-	C.support_radius = computeSupportRadius(C.area);
-	std::cout<<"\tRes = "<<C.resolution<<", support radius = "<<C.support_radius<<std::endl;
+	std::cout<<"Computed "<<scene_desc->size()<<" descriptors for the scene\n";
 
-	std::cout<<"Cleaning outliers\n";
-	cleanOutliers(C.points.p, C.support_radius); //THIS OPERATION INVALIDATES THE MESH!
-
-	std::cout<<"Computing normals\n";
-	float normal_radius = C.resolution * Parameters::getNormalRadiusFactor();
-	computeNormals(C.points.p, normal_radius, C.points.n);
-	cleanNaNNormals(C.points.p, C.points.n);
-
-	std::cout<<"Extracting keypoints\n";
-	extractKeypoints(C.points, C.resolution, C.support_radius, C.keypoints);
+	//2. Compute descriptors for keypoints in each model
 }
-*/
 
 //----------------------------------
 //-------- FROM TESTCASE.H ---------
 //----------------------------------
+template<typename PointOutT>
+void initSHOT(const Cloud& in, pcl::Feature<pcl::PointXYZRGB,PointOutT>& desc)
+{
+	std::cout<<"Initializing shot\n";
+	
+	auto shot = dynamic_cast<pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352>&>(desc);	
+	
+	shot.setRadiusSearch(in.resolution * 3.0f);
+	shot.setNumberOfThreads(4);
+	shot.setInputNormals(in.keypoints.n);
+}
+
+void TestCase::descriptiveness(std::vector<PREntry>& out)
+{
+	//We assume preprocess() was already called, so we have
+	//the keypoints inside our clouds.
+	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot;
+    benchmarkDescriptor<pcl::SHOT352>( *this, initSHOT, shot );
+}
+
 void TestCase::visualize()
 {
 	pcl::visualization::PCLVisualizer viewer;

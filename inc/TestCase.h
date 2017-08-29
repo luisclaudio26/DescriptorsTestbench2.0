@@ -12,12 +12,14 @@ typedef struct {
 class TestCase
 {
 private:
-	Cloud scene; std::vector<Cloud> models;
+	
 
 	//the name of this test case. For display purposes only.
 	std::string name;
 
 public:
+	Cloud scene; std::vector<Cloud> models; //temporarily here
+
 	//Loads .EXP file and fills the OUT vector
 	//with the test cases described in it
 	static void loadTestCasesFromEXP(const std::string& path, std::vector<TestCase>& out);
