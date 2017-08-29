@@ -6,8 +6,12 @@
 #include <pcl/point_types.h>
 
 typedef struct {
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr points;
-	pcl::PointCloud<pcl::Normal>::Ptr normals;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr p;
+	pcl::PointCloud<pcl::Normal>::Ptr n;	
+} PointNormal;
+
+typedef struct {
+	PointNormal points, keypoints;
 	std::vector<pcl::Vertices> meshes;
 	
 	float area, resolution, support_radius;

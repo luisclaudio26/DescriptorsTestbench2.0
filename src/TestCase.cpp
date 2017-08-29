@@ -13,25 +13,30 @@ static void loadCloud(const std::string& path, const std::string& gt, Cloud& out
 	std::cout << "Loading mesh "<<path<<"...";
 	*/
 	
-	out.points = pcl::PointCloud<pcl::PointXYZRGB>::Ptr( new pcl::PointCloud<pcl::PointXYZRGB>() );
-
 	pcl::PolygonMesh mesh;
 	pcl::io::loadPolygonFilePLY(path, mesh);
 
-	pcl::fromPCLPointCloud2<pcl::PointXYZRGB>(mesh.cloud, *(out.points));
 	out.meshes = mesh.polygons; //TODO: this is a copy, but maybe could be a move
+
+	out.points.p = pcl::PointCloud<pcl::PointXYZRGB>::Ptr( new pcl::PointCloud<pcl::PointXYZRGB>() );
+	pcl::fromPCLPointCloud2<pcl::PointXYZRGB>(mesh.cloud, *(out.points.p));
 }
 
 static void preprocessCloud(Cloud& C)
 {
 	using namespace Preprocessing;
 
-	C.resolution = computeResolution(C.points);
+	C.resolution = computeResolution(C.points.p);
 	C.area = computeArea(C);
 	C.support_radius = computeSupportRadius(C.area);
 
-	//THIS OPERATION INVALIDATES THE MESH!
-	cleanOutliers(C.points, C.support_radius);
+	cleanOutliers(C.points.p, C.support_radius); //THIS OPERATION INVALIDATES THE MESH!
+
+	float normal_radius = C.support_radius * Parameters::getNormalRadiusFactor();
+	computeNormals(C.points.p, normal_radius, C.points.n);
+	cleanNaNNormals(C.points.p, C.points.n);
+
+	extractKeypoints(C.points, C.resolution, C.support_radius, C.keypoints);
 }
 
 //----------------------------------
