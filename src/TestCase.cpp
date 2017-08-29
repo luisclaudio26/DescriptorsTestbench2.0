@@ -26,7 +26,6 @@ static void computeDescriptors(const Cloud& in, FeatureInitializer<PointOutT> in
 	initFeature(in, featureEstimation);
 
 	pcl::search::KdTree<pcl::PointXYZRGB>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGB>());
-	kdtree->setInputCloud(in.keypoints.p);
 
 	//general parameters
 	featureEstimation.setSearchMethod(kdtree);
@@ -57,11 +56,14 @@ void initSHOT(const Cloud& in, pcl::Feature<pcl::PointXYZRGB,PointOutT>& desc)
 {
 	std::cout<<"Initializing shot\n";
 	
-	auto shot = dynamic_cast<pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352>&>(desc);	
+	//auto shot = dynamic_cast<pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352>&>(desc);	
 	
+	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352>& shot = 
+		(pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352>&)(desc);
+
 	shot.setRadiusSearch(in.resolution * 3.0f);
 	shot.setNumberOfThreads(4);
-	shot.setInputNormals(in.keypoints.n);
+	shot.setInputNormals(in.points.n);
 }
 
 void TestCase::descriptiveness(std::vector<PREntry>& out)
