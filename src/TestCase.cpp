@@ -4,10 +4,9 @@
 #include <string>
 #include <iostream>
 
-#include <pcl/io/ply_io.h>
-#include <pcl/io/vtk_lib_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
+/*
 static void loadCloud(const std::string& path, const std::string& gt, Cloud& out)
 {
 	std::cout<<"Loading model\n";
@@ -47,6 +46,7 @@ static void preprocessCloud(Cloud& C)
 	std::cout<<"Extracting keypoints\n";
 	extractKeypoints(C.points, C.resolution, C.support_radius, C.keypoints);
 }
+*/
 
 //----------------------------------
 //-------- FROM TESTCASE.H ---------
@@ -86,9 +86,9 @@ void TestCase::visualize()
 
 void TestCase::preprocess()
 {
-	preprocessCloud(scene);
+	scene.preprocess();
 	for(auto c = models.begin(); c != models.end(); ++c)
-		preprocessCloud(*c);
+		c->preprocess();
 }
 
 void TestCase::loadTestCasesFromEXP(const std::string& path, std::vector<TestCase>& out)
@@ -118,11 +118,11 @@ void TestCase::loadTestCasesFromEXP(const std::string& path, std::vector<TestCas
 			std::getline(in, path_model);
 			std::getline(in, gt_path);
 
-			loadCloud(path_model, gt_path, model);
+			model.loadCloud(path_model, gt_path);
 		}
 
 		std::string scene_path; std::getline(in, scene_path);
-		loadCloud(scene_path, std::string(), cur.scene);
+		cur.scene.loadCloud(scene_path, std::string());
 	}
 
 	in.close();

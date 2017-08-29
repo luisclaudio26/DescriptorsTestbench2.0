@@ -22,6 +22,10 @@ typedef struct {
 	//(that is, a scene). Otherwise, groundtruth
 	//maps this cloud to its position on the scene.
 	Eigen::Matrix4f groundtruth;
+
+	//----- Operations -----
+	void loadCloud(const std::string& path, const std::string& gt);
+	void preprocess();
 } Cloud;
 
 #endif
