@@ -1,31 +1,13 @@
 #ifndef _TEST_CASE_H_
 #define _TEST_CASE_H_
 
-#include <pcl/PolygonMesh.h>
-#include <pcl/io/ply_io.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/io/vtk_lib_io.h>
-#include <pcl/point_types.h>
-#include <pcl/conversions.h>
+#include "cloud.h"
 #include <vector>
 
 //Structure for Precision-Recall curve
 typedef struct {
 	float p, r;
 } PREntry;
-
-typedef struct {
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr points;
-	std::vector<pcl::Vertices> meshes;
-	float area, resolution, support_radius;
-
-	//if Groundtruth is an identity matrix 
-	//(check with .isIdentity()), then it is not
-	//valid. It will happen for target clouds
-	//(that is, a scene). Otherwise, groundtruth
-	//maps this cloud to its position on the scene.
-	Eigen::Matrix4f groundtruth;
-} Cloud;
 
 class TestCase
 {
@@ -39,6 +21,11 @@ public:
 	//Loads .EXP file and fills the OUT vector
 	//with the test cases described in it
 	static void loadTestCasesFromEXP(const std::string& path, std::vector<TestCase>& out);
+
+	//Compute every information which will be used
+	//in benchmarking. Normals, keypoints, etc. are
+	//all calculated in this step.
+	void preprocess();
 
 	//---------------------------
 	//------- benchmarks --------
