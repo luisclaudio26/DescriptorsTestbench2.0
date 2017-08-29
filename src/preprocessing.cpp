@@ -42,7 +42,7 @@ void Preprocessing::extractKeypoints(const PointNormal& points, float resolution
 	//--------- Uniform sampling
 	pcl::UniformSampling<pcl::PointXYZRGB> scene_voxelgrid;
 	scene_voxelgrid.setInputCloud(points.p);
-	scene_voxelgrid.setRadiusSearch(50*resolution); //TODO: Parametrize days
+	scene_voxelgrid.setRadiusSearch(50*resolution); //TODO: Parametrize this
 	scene_voxelgrid.filter(non_filtered);
 
 	//extract normals

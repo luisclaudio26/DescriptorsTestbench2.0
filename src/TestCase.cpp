@@ -56,12 +56,13 @@ void initSHOT(const Cloud& in, pcl::Feature<pcl::PointXYZRGB,PointOutT>& desc)
 {
 	std::cout<<"Initializing shot\n";
 	
-	//auto shot = dynamic_cast<pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352>&>(desc);	
-	
-	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352>& shot = 
-		(pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352>&)(desc);
+	typedef pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> SHOT_t;
 
-	shot.setRadiusSearch(in.resolution * 3.0f);
+	//downcasting. This is safe if you're not mixing 
+	//different descriptors and init functions!!!
+	SHOT_t& shot = (SHOT_t&)(desc);
+
+	shot.setRadiusSearch(in.support_radius);
 	shot.setNumberOfThreads(4);
 	shot.setInputNormals(in.points.n);
 }
