@@ -55,6 +55,7 @@ void Preprocessing::extractKeypoints(const PointNormal& points, float resolution
 	//We loop over the keypoints and eliminate all
 	//points whose neighbourhood has less then 5
 	//neighbours.
+	//TODO: There's a function to do this
 	pcl::search::KdTree<pcl::PointXYZRGB> kdtree;
 	kdtree.setInputCloud(points.p);
 
@@ -87,6 +88,8 @@ void Preprocessing::extractKeypoints(const PointNormal& points, float resolution
 	*keypoints.p = non_filtered;
 	*keypoints.n = non_filtered_n;
 
+	std::cout<<"N descriptors: "<<keypoints.p->size()<<std::endl;
+
 	/*
 	c = 0;
 	for(auto p = out_n.begin(); p != out_n.end(); ++p)
@@ -107,13 +110,6 @@ void Preprocessing::extractKeypoints(const PointNormal& points, float resolution
 	for(auto p = in->begin(); p != in->end(); ++p)
 		if(pcl::isFinite<pcl::PointXYZRGB>(*p)) c++;
 	std::cout<<c<<" good points out of "<<in->size()<<std::endl; */
-
-	//paint all keypoints green
-	for (auto p = keypoints.p->begin(); p != keypoints.p->end(); ++p)
-	{
-		p->r = p->b = 0;
-		p->g = 255;
-	}
 
 	//std::cout << "done. " << out.size() << " keypoints extracted." << std::endl << std::endl;
 
@@ -194,7 +190,7 @@ void Preprocessing::computeNormals(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr&
 	//-------------------------
 	//--- Clean NaN normals ---
 	//-------------------------
-	Preprocessing::cleanNaNNormals(in, out);
+	//Preprocessing::cleanNaNNormals(in, out);
 }
 
 void Preprocessing::cleanOutliers(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& C, float search_radius)

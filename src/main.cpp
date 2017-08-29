@@ -6,6 +6,9 @@ int main (int argc, char** argv)
 {
 	std::vector<TestCase> tests;
 	TestCase::loadTestCasesFromEXP( std::string(argv[1]), tests);
-	
+
+	tests.back().preprocess();
+	tests.back().visualize();
+
 	return 0;
 }

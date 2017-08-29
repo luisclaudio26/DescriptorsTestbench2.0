@@ -27,6 +27,8 @@ public:
 	//all calculated in this step.
 	void preprocess();
 
+	void visualize();
+
 	//---------------------------
 	//------- benchmarks --------
 	//---------------------------
