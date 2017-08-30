@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 project(DescriptorBenchmark)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -g -fopenmp -Wno-deprecated -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O0 -g -fopenmp -Wno-deprecated -Wno-deprecated-declarations")
 find_package(PCL 1.8 REQUIRED)
 
 #Headers

@@ -4,6 +4,33 @@
 #include <pcl/io/ply_io.h>
 #include <pcl/io/vtk_lib_io.h>
 
+static void matrixFromFile(const string& path, Eigen::Matrix4f& out)
+{
+	//no groundtruth. Simply assign identity
+	if(path.empty())
+		out<<1,0,0,0,
+			 0,1,0,0,
+			 0,0,1,0,
+			 0,0,0,1;
+	else
+	{
+		std::ifstream reader(path, std::ios_base::in);
+
+		//TODO: check whether file was loaded correctly. If not, abort!
+		for (int i = 0; i < 4; i++)
+			for (int j = 0; j < 4; j++)
+			{
+				float temp; reader >> temp;
+				out(i, j) = temp;
+			}
+
+		reader.close();
+	}
+}
+
+//------------------------
+//----- FROM CLOUD.H -----
+//------------------------
 void Cloud::loadCloud(const std::string& path, const std::string& gt)
 {
 	std::cout<<"Loading model\n";
@@ -21,6 +48,7 @@ void Cloud::loadCloud(const std::string& path, const std::string& gt)
 	pcl::fromPCLPointCloud2<pcl::PointXYZRGB>(mesh.cloud, *(points.p));
 
 	//load groundtruth
+	matrixFromFile(gt, groundtruth);
 }
 
 void Cloud::preprocess()

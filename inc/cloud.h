@@ -23,6 +23,12 @@ typedef struct {
 	//maps this cloud to its position on the scene.
 	Eigen::Matrix4f groundtruth;
 
+	// These are the actual, correct correspondences
+	// between this clouds keypoints and the target
+	// keypoint. This is computed based on the
+	// groundtruth transformation.
+	pcl::Correspondences mapToTarget;
+
 	//----- Operations -----
 	void loadCloud(const std::string& path, const std::string& gt);
 	void preprocess();
