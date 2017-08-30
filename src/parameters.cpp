@@ -12,6 +12,7 @@ float Parameters::MESH_AREA_CORRECTION = 4.5f;
 float Parameters::NORMAL_SEARCH_RADIUS = 3.0f;
 float Parameters::MIN_NEIGHBORS = 5;
 float Parameters::RANSAC_THRESHOLD = 0.05f;
+float Parameters::UNIFORM_SAMPLING_DENSITY = 15.0f;
 
 void Parameters::loadFromFile(const string& fp)
 {
@@ -25,6 +26,7 @@ void Parameters::loadFromFile(const string& fp)
 	reader>>Parameters::NORMAL_SEARCH_RADIUS;
 	reader>>Parameters::MIN_NEIGHBORS;
 	reader>>Parameters::RANSAC_THRESHOLD;
+	reader>>Parameters::UNIFORM_SAMPLING_DENSITY;
 
 	reader.close();
 
@@ -36,6 +38,7 @@ void Parameters::loadFromFile(const string& fp)
 	std::cout<<"Normal search radius factor: "<<Parameters::NORMAL_SEARCH_RADIUS<<std::endl;
 	std::cout<<"Minimum number of neighbors within search radius: "<<Parameters::MIN_NEIGHBORS<<std::endl;
 	std::cout<<"RANSAC Threshold: "<<Parameters::RANSAC_THRESHOLD<<std::endl;
+	std::cout<<"Uniform sampling density: "<<Parameters::UNIFORM_SAMPLING_DENSITY<<std::endl;
 
 	//we use mesh_resolution_factor inverted, so
 	//to avoid divisions

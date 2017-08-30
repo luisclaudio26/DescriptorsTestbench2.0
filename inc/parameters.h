@@ -49,6 +49,11 @@ private:
 	//RANSAC distance threshold
 	static float RANSAC_THRESHOLD;
 
+	//Uniform sampling density. This will control how many
+	//keypoints we'll have when using UniformSampling as
+	//keypoint detecor.
+	static float UNIFORM_SAMPLING_DENSITY;
+
 public:
 
 	void loadFromFile(const string& fp);
@@ -61,6 +66,7 @@ public:
 	static float getNormalRadiusFactor() { return Parameters::NORMAL_SEARCH_RADIUS; }
 	static float getMinNeighbors() { return Parameters::MIN_NEIGHBORS; }
 	static float getRANSACThreshold() { return Parameters::RANSAC_THRESHOLD; }
+	static float getUniformSamplingDensity() { return Parameters::UNIFORM_SAMPLING_DENSITY; }
 };
 
 #endif

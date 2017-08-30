@@ -15,8 +15,6 @@
 
 static void correctCorrespondences(const Cloud& target, Cloud& source)
 {
-	std::cout<<"Computing groundtruths.\n";
-
 	//threshold is Half of the support radius. We square it
 	//not to compute square roots.
 	float threshold = target.support_radius * target.support_radius * 0.25f;
@@ -41,13 +39,7 @@ static void correctCorrespondences(const Cloud& target, Cloud& source)
 		if(dist[0] < threshold)
 			source.mapToTarget.push_back( pcl::Correspondence(kp, ind[0], dist[0]) );
 	}
-
-	if(source.mapToTarget.size() > 0)
-		std::cout<<"done. Computed "<<source.mapToTarget.size()<<" groundtruth correspondences.\n\n";
-	else
-		std::cout<<" WARNING! No groundtruth correspondences could be computed.\n\n";
 }
-
 
 //Callbacks of FeatureInitializer type should downcast
 //pcl::Feature to the derived class in question and then
@@ -72,6 +64,32 @@ static void computeDescriptors(const Cloud& in, FeatureInitializer<PointOutT> in
 	
 	featureEstimation.compute(*out);
 }
+
+static bool operator==(const pcl::Correspondence& lhs, const pcl::Correspondence& rhs)
+{
+	return lhs.index_match == rhs.index_match && lhs.index_query == rhs.index_query;
+}
+
+static void correctMatches(const pcl::Correspondences& correct, 
+							const pcl::Correspondences& matches,
+							pcl::Correspondences& out)
+{
+	for(auto m = matches.begin(); m != matches.end(); ++m)
+	{
+		//copy-pasted from std::FIND implementation
+		auto first = correct.begin();
+		while(first != correct.end())
+		{
+			if(*first == *m)
+			{
+				out.push_back(*m);
+				break;
+			}
+			++first;
+		}
+	}
+}
+
 
 template<typename PointOutT>
 static void benchmarkDescriptor(const TestCase& in, FeatureInitializer<PointOutT> initFeature,
@@ -110,6 +128,12 @@ static void benchmarkDescriptor(const TestCase& in, FeatureInitializer<PointOutT
 	corr_est.determineReciprocalCorrespondences(*corr);
 
 	std::cout<<"Found "<<corr->size()<<" correspondences\n";
+
+	//4. Count number of correct correspondences
+	pcl::Correspondences correct;
+	correctMatches(*corr, in.models.back().mapToTarget, correct);
+
+	std::cout<<"Number of correct correspondences: "<<correct.size()<<std::endl;
 }
 
 //----------------------------------
