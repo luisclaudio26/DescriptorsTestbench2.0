@@ -4,13 +4,22 @@
 #include <pcl/PolygonMesh.h>
 #include <pcl/common/projection_matrix.h>
 #include <pcl/point_types.h>
+#include <pcl/features/feature.h>
+
+struct Cloud; typedef struct Cloud Cloud;
+
+//Callbacks of FeatureInitializer type should downcast
+//pcl::Feature to the derived class in question and then
+//set the parameters using the Cloud.
+template<typename PointOutT>
+using FeatureInitializer = void(*)(const struct Cloud&, pcl::Feature<pcl::PointXYZRGB,PointOutT>&);
 
 typedef struct {
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr p;
 	pcl::PointCloud<pcl::Normal>::Ptr n;	
 } PointNormal;
 
-typedef struct {
+struct Cloud {
 	PointNormal points, keypoints;
 	std::vector<pcl::Vertices> meshes;
 	
@@ -32,6 +41,14 @@ typedef struct {
 	//----- Operations -----
 	void loadCloud(const std::string& path, const std::string& gt);
 	void preprocess();
-} Cloud;
+
+	template<typename PointOutT>
+	void computeDescriptors(FeatureInitializer<PointOutT> initFeature,
+							pcl::Feature<pcl::PointXYZRGB,PointOutT>& featureEstimation,
+							const typename pcl::PointCloud<PointOutT>::Ptr& out) const;
+
+};
+
+#include "impl/cloud.hpp"
 
 #endif

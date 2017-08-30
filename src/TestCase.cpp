@@ -1,5 +1,6 @@
 #include "../inc/TestCase.h"
 #include "../inc/preprocessing.h"
+#include "../inc/descriptiveness.h"
 
 #include <string>
 #include <iostream>
@@ -13,97 +14,20 @@
 #include <pcl/features/shot_omp.h>
 #include <pcl/features/impl/shot_omp.hpp>
 
-static void correctCorrespondences(const Cloud& target, Cloud& source)
-{
-	//threshold is Half of the support radius. We square it
-	//not to compute square roots.
-	float threshold = target.support_radius * target.support_radius * 0.25f;
-
-	//KD-tree for NN searching inside scene_kp
-	pcl::search::KdTree<pcl::PointXYZRGB>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGB>());
-	kdtree->setInputCloud(target.keypoints.p);
-
-	for(int kp = 0; kp < source.keypoints.p->size(); ++kp)
-	{
-		pcl::PointXYZRGB p_source = source.keypoints.p->at(kp);
-
-		//p_target is p_source in target space
-		Eigen::Vector4f v4_p = source.groundtruth * p_source.getVector4fMap();
-		
-		pcl::PointXYZRGB p_target;
-		p_target.x = v4_p[0]; p_target.y = v4_p[1]; p_target.z = v4_p[2];
-
-		std::vector<int> ind; std::vector<float> dist;
-		kdtree->nearestKSearch(p_target, 1, ind, dist);
-
-		if(dist[0] < threshold)
-			source.mapToTarget.push_back( pcl::Correspondence(kp, ind[0], dist[0]) );
-	}
-}
-
-//Callbacks of FeatureInitializer type should downcast
-//pcl::Feature to the derived class in question and then
-//set the parameters using the Cloud.
 template<typename PointOutT>
-using FeatureInitializer = void(*)(const Cloud&, pcl::Feature<pcl::PointXYZRGB,PointOutT>&);
-
-template<typename PointOutT>
-static void computeDescriptors(const Cloud& in, FeatureInitializer<PointOutT> initFeature,
-								pcl::Feature<pcl::PointXYZRGB,PointOutT>& featureEstimation,
-								const typename pcl::PointCloud<PointOutT>::Ptr& out)
-{
-	//set descriptor engine parameters
-	initFeature(in, featureEstimation);
-
-	pcl::search::KdTree<pcl::PointXYZRGB>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGB>());
-
-	//general parameters
-	featureEstimation.setSearchMethod(kdtree);
-	featureEstimation.setInputCloud(in.keypoints.p);
-	featureEstimation.setSearchSurface(in.points.p);
-	
-	featureEstimation.compute(*out);
-}
-
-static bool operator==(const pcl::Correspondence& lhs, const pcl::Correspondence& rhs)
-{
-	return lhs.index_match == rhs.index_match && lhs.index_query == rhs.index_query;
-}
-
-static void correctMatches(const pcl::Correspondences& correct, 
-							const pcl::Correspondences& matches,
-							pcl::Correspondences& out)
-{
-	for(auto m = matches.begin(); m != matches.end(); ++m)
-	{
-		//copy-pasted from std::FIND implementation
-		auto first = correct.begin();
-		while(first != correct.end())
-		{
-			if(*first == *m)
-			{
-				out.push_back(*m);
-				break;
-			}
-			++first;
-		}
-	}
-}
-
-
-template<typename PointOutT>
-static void benchmarkDescriptor(const TestCase& in, FeatureInitializer<PointOutT> initFeature,
-								pcl::Feature<pcl::PointXYZRGB, PointOutT>& featureEstimation)
+static void evaluateDescriptiveness(const TestCase& in, FeatureInitializer<PointOutT> initFeature,
+									pcl::Feature<pcl::PointXYZRGB, PointOutT>& featureEstimation)
 {
 	//TODO: THERE'S PROBABLY A BETTER WAY TO DO THINGS INSTEAD
 	//OF LOOPING AND CREATING THESE DESCRIPTOR POINT CLOUDS.
 	//PROBABLY PUTTING DESCRIPTORS INSIDE THE CLOUD, BUT THIS
 	//WOULD REQUIRE TEMPLATING THE CLOUD CLASS, WHICH WOULD
 	//BE A PAIN IN THE ASS.
+	using namespace Descriptiveness;
 
 	//1. Compute descriptors for keypoints in scene
 	typename pcl::PointCloud<PointOutT>::Ptr scene_desc( new pcl::PointCloud<PointOutT>() );
-	computeDescriptors(in.scene, initFeature, featureEstimation, scene_desc);
+	in.scene.computeDescriptors(initFeature, featureEstimation, scene_desc);
 
 	std::cout<<"Computed "<<scene_desc->size()<<" descriptors for the scene\n";
 
@@ -113,7 +37,7 @@ static void benchmarkDescriptor(const TestCase& in, FeatureInitializer<PointOutT
 	for(auto m = in.models.begin(); m != in.models.end(); ++m)
 	{
 		typename pcl::PointCloud<PointOutT>::Ptr model_desc( new pcl::PointCloud<PointOutT>() );
-		computeDescriptors(*m, initFeature, featureEstimation, model_desc);
+		m->computeDescriptors(initFeature, featureEstimation, model_desc);
 		models_desc.push_back(model_desc);
 
 		std::cout<<"Computed "<<model_desc->size()<<" descriptors for the model\n";
@@ -131,7 +55,7 @@ static void benchmarkDescriptor(const TestCase& in, FeatureInitializer<PointOutT
 
 	//4. Count number of correct correspondences
 	pcl::Correspondences correct;
-	correctMatches(*corr, in.models.back().mapToTarget, correct);
+	filterCorrectMatches(*corr, in.models.back().mapToTarget, correct);
 
 	std::cout<<"Number of correct correspondences: "<<correct.size()<<std::endl;
 }
@@ -159,12 +83,13 @@ void TestCase::descriptiveness(std::vector<PREntry>& out)
 {
 	//We assume preprocess() was already called, so we have
 	//the keypoints inside our clouds.
+	using namespace Descriptiveness;
 
 	//Compute groundtruth correspondences
-	correctCorrespondences(scene, models.back());
+	groundtruthCorrespondences(scene, models.back());
 
 	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot;
-    benchmarkDescriptor<pcl::SHOT352>( *this, initSHOT, shot );
+    evaluateDescriptiveness<pcl::SHOT352>( *this, initSHOT, shot );
 }
 
 void TestCase::visualize()
