@@ -7,7 +7,7 @@ int main (int argc, char** argv)
 	std::vector<TestCase> tests;
 	TestCase::loadTestCasesFromEXP( std::string(argv[1]), tests);
 
-	std::vector<PREntry> dummy;
+	Descriptiveness::PRC dummy;
 
 	tests.back().preprocess();
 	tests.back().descriptiveness(dummy);

@@ -2,14 +2,19 @@
 #define _DESCRIPTIVENESS_H_
 
 #include "cloud.h"
+#include <vector>
 #include <pcl/registration/correspondence_estimation.h>
 
 namespace Descriptiveness
 {
+	//Structure for Precision-Recall curve
+	typedef struct { float p, r; } PREntry;
+	typedef std::vector<PREntry> PRC;
+
 	template<typename DescType>
 	using DistanceMetric = float(*)(const DescType& lhs, const DescType& rhs);
 
-	
+
 	void groundtruthCorrespondences(const Cloud& target, Cloud& source);
 
 	void filterByGroundtruth(const pcl::Correspondences& groundtruth, 
@@ -38,7 +43,8 @@ namespace Descriptiveness
 									const pcl::Correspondences& groundtruth,
 									DistanceMetric<DescType> dist, 
 									FeatureInitializer<DescType> initFeature,
-									pcl::Feature<pcl::PointXYZRGB, DescType>& featureEstimation);
+									pcl::Feature<pcl::PointXYZRGB, DescType>& featureEstimation,
+									PRC& out);
 }
 
 #include "impl/descriptiveness.hpp"

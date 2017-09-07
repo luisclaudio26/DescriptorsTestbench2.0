@@ -1,6 +1,5 @@
 #include "../inc/TestCase.h"
 #include "../inc/preprocessing.h"
-#include "../inc/descriptiveness.h"
 
 #include <string>
 #include <iostream>
@@ -42,18 +41,19 @@ float distSHOT(const PointOutT& lhs, const PointOutT& rhs)
 	return sqrt(acc);
 }
 
-void TestCase::descriptiveness(std::vector<PREntry>& out)
+void TestCase::descriptiveness(Descriptiveness::PRC& out)
 {
 	//We assume preprocess() was already called, so we have
 	//the keypoints inside our clouds.
 	using namespace Descriptiveness;
 
 	//Compute groundtruth correspondences
+	PRC prc;
 	groundtruthCorrespondences(scene, models.back());
 
 	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot;
     evaluateDescriptiveness<pcl::SHOT352>( this->scene, this->models.back(), this->models.back().mapToTarget, 
-    										distSHOT, initSHOT, shot );
+    										distSHOT, initSHOT, shot, prc );
 }
 
 void TestCase::visualize()

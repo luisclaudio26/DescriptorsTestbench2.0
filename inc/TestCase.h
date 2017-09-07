@@ -2,24 +2,18 @@
 #define _TEST_CASE_H_
 
 #include "cloud.h"
+#include "descriptiveness.h"
 #include <vector>
-
-//Structure for Precision-Recall curve
-typedef struct {
-	float p, r;
-} PREntry;
 
 class TestCase
 {
 private:
-	
+	Cloud scene; std::vector<Cloud> models;
 
 	//the name of this test case. For display purposes only.
 	std::string name;
 
 public:
-	Cloud scene; std::vector<Cloud> models; //temporarily here
-
 	//Loads .EXP file and fills the OUT vector
 	//with the test cases described in it
 	static void loadTestCasesFromEXP(const std::string& path, std::vector<TestCase>& out);
@@ -34,7 +28,7 @@ public:
 	//---------------------------
 	//------- benchmarks --------
 	//---------------------------
-	void descriptiveness(std::vector<PREntry>& out);
+	void descriptiveness(Descriptiveness::PRC& out);
 };
 
 #endif
