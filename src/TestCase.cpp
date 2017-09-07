@@ -14,8 +14,11 @@
 #include <pcl/features/shot_omp.h>
 #include <pcl/features/impl/shot_omp.hpp>
 
+using Descriptiveness::DistanceMetric;
+
 template<typename PointOutT>
-static void evaluateDescriptiveness(const TestCase& in, FeatureInitializer<PointOutT> initFeature,
+static void evaluateDescriptiveness(const TestCase& in, 
+									DistanceMetric<PointOutT> dist, FeatureInitializer<PointOutT> initFeature,
 									pcl::Feature<pcl::PointXYZRGB, PointOutT>& featureEstimation)
 {
 	//TODO: THERE'S PROBABLY A BETTER WAY TO DO THINGS INSTEAD
@@ -43,21 +46,44 @@ static void evaluateDescriptiveness(const TestCase& in, FeatureInitializer<Point
 		std::cout<<"Computed "<<model_desc->size()<<" descriptors for the model\n";
 	}
 
-	//3. Estimate correspondence (use B-SHOT code)
-	pcl::registration::CorrespondenceEstimation<PointOutT,PointOutT> corr_est;
-	corr_est.setInputSource(models_desc.back());
-	corr_est.setInputTarget(scene_desc);
+	//3. Estimate correspondences.
+	// determineCorrespondences() will tries to find the point in SOURCE cloud
+	// which is the closest to the one in TARGET cloud. This means we end up
+	// with as many correspondences as points in target cloud.
+	//
+	// determineReciprocalCorrespondences() tries to determineCorrespondences()
+	// in both directions (source -> target, target -> cloud) and reject all
+	// correspondences which do not "agree". Notice that although this seems
+	// more precise (and indeed, it discards LOTS of correspondences), a simple
+	// test showed that it ended up by rejecting some correct correspondences in the end.
+	//
+	// TODO: Test which can lead to better results.
 
-	pcl::CorrespondencesPtr corr(new pcl::Correspondences() );
-	corr_est.determineReciprocalCorrespondences(*corr);
+	/*
+	pcl::registration::CorrespondenceEstimation<PointOutT,PointOutT> corr_estimator;
+	corr_estimator.setInputSource(models_desc.back());
+	corr_estimator.setInputTarget(scene_desc);
 
-	std::cout<<"Found "<<corr->size()<<" correspondences\n";
+	pcl::CorrespondencesPtr all_correspondences(new pcl::Correspondences());
+	corr_estimator.determineCorrespondences(*all_correspondences);
+	*/
 
-	//4. Count number of correct correspondences
+	pcl::CorrespondencesPtr all_correspondences(new pcl::Correspondences());
+	correspondenceEstimationNNDR<PointOutT>(scene_desc, models_desc.back(), dist, *all_correspondences);
+
+	//4. Among all_correspondences, select the correct ones according to the groundtruth
 	pcl::Correspondences correct;
-	filterCorrectMatches(*corr, in.models.back().mapToTarget, correct);
+	filterByGroundtruth(*all_correspondences, in.models.back().mapToTarget, correct);
 
-	std::cout<<"Number of correct correspondences: "<<correct.size()<<std::endl;
+	std::cout<<"Correct correspondences among all correspondences: "<<correct.size()<<std::endl;
+
+	//4. Select correspondences based on NNDR. This will be used to create PRC.
+	pcl::Correspondences selected_correspondences;
+	filterByNNDR<PointOutT>(*all_correspondences, 0.5f, selected_correspondences);
+
+	std::cout<<"Number of correspondences with NNDR < 0.5: "<<selected_correspondences.size()<<std::endl;
+
+	//5. Compute statistics
 }
 
 //----------------------------------
@@ -79,6 +105,15 @@ void initSHOT(const Cloud& in, pcl::Feature<pcl::PointXYZRGB,PointOutT>& desc)
 	shot.setInputNormals(in.points.n);
 }
 
+template<typename PointOutT>
+float distSHOT(const PointOutT& lhs, const PointOutT& rhs)
+{
+	float acc = 0.0f;
+	for(int i = 0; i < 352; ++i)
+		acc += pow(lhs.descriptor[i]-rhs.descriptor[i], 2.0f);
+	return sqrt(acc);
+}
+
 void TestCase::descriptiveness(std::vector<PREntry>& out)
 {
 	//We assume preprocess() was already called, so we have
@@ -89,7 +124,7 @@ void TestCase::descriptiveness(std::vector<PREntry>& out)
 	groundtruthCorrespondences(scene, models.back());
 
 	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot;
-    evaluateDescriptiveness<pcl::SHOT352>( *this, initSHOT, shot );
+    evaluateDescriptiveness<pcl::SHOT352>( *this, distSHOT, initSHOT, shot );
 }
 
 void TestCase::visualize()

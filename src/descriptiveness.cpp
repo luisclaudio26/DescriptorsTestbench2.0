@@ -37,9 +37,9 @@ void Descriptiveness::groundtruthCorrespondences(const Cloud& target, Cloud& sou
 	}
 }
 
-void Descriptiveness::filterCorrectMatches(const pcl::Correspondences& groundtruth, 
-										const pcl::Correspondences& matches,
-										pcl::Correspondences& out)
+void Descriptiveness::filterByGroundtruth(const pcl::Correspondences& groundtruth, 
+											const pcl::Correspondences& matches,
+											pcl::Correspondences& out)
 {
 	for(auto m = matches.begin(); m != matches.end(); ++m)
 	{
