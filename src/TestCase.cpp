@@ -14,52 +14,6 @@
 #include <pcl/features/shot_omp.h>
 #include <pcl/features/impl/shot_omp.hpp>
 
-using Descriptiveness::DistanceMetric;
-
-template<typename PointOutT>
-static void evaluateDescriptiveness(const Cloud& scene, const Cloud& model, 
-									const pcl::Correspondences& groundtruth,
-									DistanceMetric<PointOutT> dist, FeatureInitializer<PointOutT> initFeature,
-									pcl::Feature<pcl::PointXYZRGB, PointOutT>& featureEstimation)
-{
-	//TODO: THERE'S PROBABLY A BETTER WAY TO DO THINGS INSTEAD
-	//OF LOOPING AND CREATING THESE DESCRIPTOR POINT CLOUDS.
-	//PROBABLY PUTTING DESCRIPTORS INSIDE THE CLOUD, BUT THIS
-	//WOULD REQUIRE TEMPLATING THE CLOUD CLASS, WHICH WOULD
-	//BE A PAIN IN THE ASS.
-	using namespace Descriptiveness;
-
-	//1. Compute descriptors for keypoints in scene
-	typename pcl::PointCloud<PointOutT>::Ptr scene_desc( new pcl::PointCloud<PointOutT>() );
-	scene.computeDescriptors(initFeature, featureEstimation, scene_desc);
-	
-	std::cout<<"Computed "<<scene_desc->size()<<" descriptors for the scene\n";
-
-	//2. Compute descriptors for keypoints in model
-	typename pcl::PointCloud<PointOutT>::Ptr model_desc( new pcl::PointCloud<PointOutT>() );
-	model.computeDescriptors(initFeature, featureEstimation, model_desc);
-
-	std::cout<<"Computed "<<model_desc->size()<<" descriptors for the model\n";
-
-	//3. Estimate correspondences
-	pcl::CorrespondencesPtr all_correspondences(new pcl::Correspondences());
-	correspondenceEstimationNNDR<PointOutT>(scene_desc, model_desc, dist, *all_correspondences);
-
-	//4. Among all_correspondences, select the correct ones according to the groundtruth
-	pcl::Correspondences correct;
-	filterByGroundtruth(*all_correspondences, groundtruth, correct);
-
-	std::cout<<"Correct correspondences among all correspondences: "<<correct.size()<<std::endl;
-
-	//4. Select correspondences based on NNDR. This will be used to create PRC.
-	pcl::Correspondences selected_correspondences;
-	filterByNNDR<PointOutT>(*all_correspondences, 0.5f, selected_correspondences);
-
-	std::cout<<"Number of correspondences with NNDR < 0.5: "<<selected_correspondences.size()<<std::endl;
-
-	//5. Compute statistics
-}
-
 //----------------------------------
 //-------- FROM TESTCASE.H ---------
 //----------------------------------

@@ -6,7 +6,7 @@ using std::ifstream;
 
 unsigned int Parameters::N_THREADS = 4;
 float Parameters::SUPPORT_RADIUS_ALPHA = 0.005;
-int Parameters::N_STEPS_DISTANCE_THRESHOLD = 40;
+int Parameters::N_STEPS_DISTANCE_THRESHOLD = 10;
 float Parameters::MESH_RESOLUTION_FACTOR = 1.0f;
 float Parameters::MESH_AREA_CORRECTION = 4.5f;
 float Parameters::NORMAL_SEARCH_RADIUS = 3.0f;

@@ -1,4 +1,5 @@
 #include <limits>
+#include "../parameters.h"
 
 template<typename DescType>
 void Descriptiveness::filterByNNDR(const pcl::Correspondences& matches, 
@@ -56,5 +57,68 @@ void Descriptiveness::correspondenceEstimationNNDR(const typename pcl::PointClou
 
 		float NNDR = dist_1st / dist_2nd;
 		matches.push_back( pcl::Correspondence(closest1st, t_id, NNDR) ); //TODO: I'm not sure about the order!!!
+	}
+}
+
+template<typename DescType>
+void Descriptiveness::evaluateDescriptiveness(const Cloud& scene, const Cloud& model, 
+												const pcl::Correspondences& groundtruth,
+												DistanceMetric<DescType> dist, 
+												FeatureInitializer<DescType> initFeature,
+												pcl::Feature<pcl::PointXYZRGB, DescType>& featureEstimation)
+{
+	//TODO: THERE'S PROBABLY A BETTER WAY TO DO THINGS INSTEAD
+	//OF LOOPING AND CREATING THESE DESCRIPTOR POINT CLOUDS.
+	//PROBABLY PUTTING DESCRIPTORS INSIDE THE CLOUD, BUT THIS
+	//WOULD REQUIRE TEMPLATING THE CLOUD CLASS, WHICH WOULD
+	//BE A PAIN IN THE ASS.
+	using namespace Descriptiveness;
+
+	//1. Compute descriptors for keypoints in scene
+	typename pcl::PointCloud<DescType>::Ptr scene_desc( new pcl::PointCloud<DescType>() );
+	scene.computeDescriptors(initFeature, featureEstimation, scene_desc);
+	
+	std::cout<<"Computed "<<scene_desc->size()<<" descriptors for the scene\n";
+
+	//2. Compute descriptors for keypoints in model
+	typename pcl::PointCloud<DescType>::Ptr model_desc( new pcl::PointCloud<DescType>() );
+	model.computeDescriptors(initFeature, featureEstimation, model_desc);
+
+	std::cout<<"Computed "<<model_desc->size()<<" descriptors for the model\n";
+
+	//3. Estimate correspondences
+	pcl::Correspondences all_correspondences;
+	correspondenceEstimationNNDR<DescType>(scene_desc, model_desc, dist, all_correspondences);
+
+	//4. Among all_correspondences, select the correct ones according to the groundtruth
+	pcl::Correspondences correct;
+	filterByGroundtruth(all_correspondences, groundtruth, correct);
+
+	std::cout<<"Correct correspondences among all correspondences: "<<correct.size()<<std::endl;
+
+	//4. Select correspondences based on NNDR. This will be used to create PRC.
+	int n = Parameters::getNSteps();
+	for(int i = 0; i < n; ++i)
+	{
+		float tau = i / (float)n;
+
+		pcl::Correspondences selected_correspondences;
+		filterByNNDR<DescType>(all_correspondences, tau, selected_correspondences);
+
+		std::cout<<"\n\tNumber of correspondences with NNDR < "<<tau<<": "<<selected_correspondences.size()<<std::endl;
+
+		//Having selected our correspondences, filter then using the groundtruth
+		pcl::Correspondences selected_correct;
+		filterByGroundtruth(selected_correspondences, groundtruth, selected_correct);
+
+		std::cout<<"\tNumber of correct correspondences with NNDR < "<<tau<<": "<<selected_correct.size()<<std::endl;
+
+		//Compute statistics
+		float precision = selected_correspondences.size() == 0 ?
+							0 : (float)selected_correct.size() / selected_correspondences.size();
+		
+		float recall = (float)selected_correct.size() / all_correspondences.size();
+
+		std::cout<<"\tPrecision = "<<precision*100.0f<<"\%\tRecall = "<<recall*100.0f<<"\%\n";
 	}
 }

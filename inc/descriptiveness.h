@@ -6,6 +6,10 @@
 
 namespace Descriptiveness
 {
+	template<typename DescType>
+	using DistanceMetric = float(*)(const DescType& lhs, const DescType& rhs);
+
+	
 	void groundtruthCorrespondences(const Cloud& target, Cloud& source);
 
 	void filterByGroundtruth(const pcl::Correspondences& groundtruth, 
@@ -25,12 +29,16 @@ namespace Descriptiveness
 	// In a far future, we should implement kdtrees able to handle any
 	// distance metric.
 	template<typename DescType>
-	using DistanceMetric = float(*)(const DescType& lhs, const DescType& rhs);
-
-	template<typename DescType>
 	void correspondenceEstimationNNDR(const typename pcl::PointCloud<DescType>::Ptr& target, 
 										const typename pcl::PointCloud<DescType>::Ptr& source,
 										DistanceMetric<DescType> distance, pcl::Correspondences& matches);
+
+	template<typename DescType>
+	void evaluateDescriptiveness(const Cloud& scene, const Cloud& model, 
+									const pcl::Correspondences& groundtruth,
+									DistanceMetric<DescType> dist, 
+									FeatureInitializer<DescType> initFeature,
+									pcl::Feature<pcl::PointXYZRGB, DescType>& featureEstimation);
 }
 
 #include "impl/descriptiveness.hpp"
