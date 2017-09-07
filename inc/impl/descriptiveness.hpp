@@ -4,7 +4,8 @@ template<typename DescType>
 void Descriptiveness::filterByNNDR(const pcl::Correspondences& matches, 
 									float NNDR, pcl::Correspondences& out)
 {
-
+	for(auto m = matches.begin(); m != matches.end(); ++m)
+		if(m->distance < NNDR) out.push_back(*m);
 }
 
 template<typename DescType>
@@ -12,7 +13,8 @@ void Descriptiveness::correspondenceEstimationNNDR(const typename pcl::PointClou
 													const typename pcl::PointCloud<DescType>::Ptr& source,
 													DistanceMetric<DescType> distance, pcl::Correspondences& matches)
 {
-	//Brute-force search for closest pair of descriptors
+	//Brute-force search for closest pair of descriptors,
+	//in a non-reciprocal fashion.
 	//
 	//TODO: I think it is possible to do this in one loop
 	//by looping over it, storing the first and second NN;

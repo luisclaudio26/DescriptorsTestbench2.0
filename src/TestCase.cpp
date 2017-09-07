@@ -17,7 +17,8 @@
 using Descriptiveness::DistanceMetric;
 
 template<typename PointOutT>
-static void evaluateDescriptiveness(const TestCase& in, 
+static void evaluateDescriptiveness(const Cloud& scene, const Cloud& model, 
+									const pcl::Correspondences& groundtruth,
 									DistanceMetric<PointOutT> dist, FeatureInitializer<PointOutT> initFeature,
 									pcl::Feature<pcl::PointXYZRGB, PointOutT>& featureEstimation)
 {
@@ -30,50 +31,23 @@ static void evaluateDescriptiveness(const TestCase& in,
 
 	//1. Compute descriptors for keypoints in scene
 	typename pcl::PointCloud<PointOutT>::Ptr scene_desc( new pcl::PointCloud<PointOutT>() );
-	in.scene.computeDescriptors(initFeature, featureEstimation, scene_desc);
-
+	scene.computeDescriptors(initFeature, featureEstimation, scene_desc);
+	
 	std::cout<<"Computed "<<scene_desc->size()<<" descriptors for the scene\n";
 
-	//2. Compute descriptors for keypoints in each model
-	std::vector<typename pcl::PointCloud<PointOutT>::Ptr> models_desc;
+	//2. Compute descriptors for keypoints in model
+	typename pcl::PointCloud<PointOutT>::Ptr model_desc( new pcl::PointCloud<PointOutT>() );
+	model.computeDescriptors(initFeature, featureEstimation, model_desc);
 
-	for(auto m = in.models.begin(); m != in.models.end(); ++m)
-	{
-		typename pcl::PointCloud<PointOutT>::Ptr model_desc( new pcl::PointCloud<PointOutT>() );
-		m->computeDescriptors(initFeature, featureEstimation, model_desc);
-		models_desc.push_back(model_desc);
+	std::cout<<"Computed "<<model_desc->size()<<" descriptors for the model\n";
 
-		std::cout<<"Computed "<<model_desc->size()<<" descriptors for the model\n";
-	}
-
-	//3. Estimate correspondences.
-	// determineCorrespondences() will tries to find the point in SOURCE cloud
-	// which is the closest to the one in TARGET cloud. This means we end up
-	// with as many correspondences as points in target cloud.
-	//
-	// determineReciprocalCorrespondences() tries to determineCorrespondences()
-	// in both directions (source -> target, target -> cloud) and reject all
-	// correspondences which do not "agree". Notice that although this seems
-	// more precise (and indeed, it discards LOTS of correspondences), a simple
-	// test showed that it ended up by rejecting some correct correspondences in the end.
-	//
-	// TODO: Test which can lead to better results.
-
-	/*
-	pcl::registration::CorrespondenceEstimation<PointOutT,PointOutT> corr_estimator;
-	corr_estimator.setInputSource(models_desc.back());
-	corr_estimator.setInputTarget(scene_desc);
-
+	//3. Estimate correspondences
 	pcl::CorrespondencesPtr all_correspondences(new pcl::Correspondences());
-	corr_estimator.determineCorrespondences(*all_correspondences);
-	*/
-
-	pcl::CorrespondencesPtr all_correspondences(new pcl::Correspondences());
-	correspondenceEstimationNNDR<PointOutT>(scene_desc, models_desc.back(), dist, *all_correspondences);
+	correspondenceEstimationNNDR<PointOutT>(scene_desc, model_desc, dist, *all_correspondences);
 
 	//4. Among all_correspondences, select the correct ones according to the groundtruth
 	pcl::Correspondences correct;
-	filterByGroundtruth(*all_correspondences, in.models.back().mapToTarget, correct);
+	filterByGroundtruth(*all_correspondences, groundtruth, correct);
 
 	std::cout<<"Correct correspondences among all correspondences: "<<correct.size()<<std::endl;
 
@@ -124,7 +98,8 @@ void TestCase::descriptiveness(std::vector<PREntry>& out)
 	groundtruthCorrespondences(scene, models.back());
 
 	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot;
-    evaluateDescriptiveness<pcl::SHOT352>( *this, distSHOT, initSHOT, shot );
+    evaluateDescriptiveness<pcl::SHOT352>( this->scene, this->models.back(), this->models.back().mapToTarget, 
+    										distSHOT, initSHOT, shot );
 }
 
 void TestCase::visualize()
