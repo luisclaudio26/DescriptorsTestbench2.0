@@ -1,5 +1,6 @@
 #include "../inc/TestCase.h"
 #include "../inc/preprocessing.h"
+#include "../inc/preprocessing.h"
 
 #include <string>
 #include <iostream>
@@ -13,13 +14,16 @@
 #include <pcl/features/shot_omp.h>
 #include <pcl/features/impl/shot_omp.hpp>
 
+#include <pcl/features/fpfh_omp.h>
+#include <pcl/features/impl/fpfh_omp.hpp>
+
 //----------------------------------
 //-------- FROM TESTCASE.H ---------
 //----------------------------------
 template<typename PointOutT>
 void initSHOT(const Cloud& in, pcl::Feature<pcl::PointXYZRGB,PointOutT>& desc)
 {
-	std::cout<<"Initializing shot\n";
+	std::cout<<"Initializing SHOT\n";
 	
 	typedef pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> SHOT_t;
 
@@ -33,6 +37,22 @@ void initSHOT(const Cloud& in, pcl::Feature<pcl::PointXYZRGB,PointOutT>& desc)
 }
 
 template<typename PointOutT>
+void initFPFH(const Cloud& in, pcl::Feature<pcl::PointXYZRGB,PointOutT>& desc)
+{
+	std::cout<<"Initializing FPFH\n";
+	
+	typedef pcl::FPFHEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::FPFHSignature33> FPFH_t;
+
+	//downcasting. This is safe if you're not mixing 
+	//different descriptors and init functions!!!
+	FPFH_t& fpfh = (FPFH_t&)(desc);
+
+	fpfh.setRadiusSearch(in.support_radius);
+	fpfh.setNumberOfThreads(4);
+	fpfh.setInputNormals(in.points.n);
+}
+
+template<typename PointOutT>
 float distSHOT(const PointOutT& lhs, const PointOutT& rhs)
 {
 	float acc = 0.0f;
@@ -41,28 +61,48 @@ float distSHOT(const PointOutT& lhs, const PointOutT& rhs)
 	return sqrt(acc);
 }
 
-void TestCase::descriptiveness(Descriptiveness::PRC& out)
+template<typename PointOutT>
+float distFPFH(const PointOutT& lhs, const PointOutT& rhs)
+{
+	float acc = 0.0f;
+	for(int i = 0; i < 33; ++i)
+		acc += pow(lhs.histogram[i]-rhs.histogram[i], 2.0f);
+	return sqrt(acc);
+}
+
+void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 {
 	//We assume preprocess() was already called, so we have
 	//the keypoints inside our clouds.
 	using namespace Descriptiveness;
 
-	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot;
+	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot; 
+	PRC prcSHOT; prcSHOT.resize( Parameters::getNSteps() );
+	
+	pcl::FPFHEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::FPFHSignature33> fpfh; 
+	PRC prcFPFH; prcFPFH.resize( Parameters::getNSteps() );
+
+	out.resize( 2 );
 
 	//run descriptiveness evaluation for each model-scene pair
 	for(auto m = models.begin(); m != models.end(); ++m)
 	{
-		PRC prc;
 		groundtruthCorrespondences(scene, *m);
 
+		PRC prc1;
 		evaluateDescriptiveness<pcl::SHOT352>( scene, *m, m->mapToTarget, 
-												distSHOT, initSHOT, shot, prc );
+												distSHOT, initSHOT, shot, prc1 );
+		prcSHOT = prcSHOT + prc1;
 
-		out = out + prc;
+		PRC prc2;
+		evaluateDescriptiveness<pcl::FPFHSignature33>( scene, *m, m->mapToTarget, 
+												distFPFH, initFPFH, fpfh, prc2 );
+		prcFPFH = prcFPFH + prc2;
 	}
 
 	//compute average of PR curves
-	out = out * (1.0f/models.size());
+	out.push_back( prcSHOT * (1.0f/models.size()) );
+	out.push_back( prcFPFH * (1.0f/models.size()) );
 }
 
 void TestCase::visualize()

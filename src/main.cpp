@@ -1,20 +1,27 @@
 #include <iostream>
+#include <vector>
 #include "../inc/TestCase.h"
+
 using namespace std;
+using namespace Descriptiveness;
 
 int main (int argc, char** argv)
 {
-	std::vector<TestCase> tests;
+	vector<TestCase> tests;
 	TestCase::loadTestCasesFromEXP( std::string(argv[1]), tests);
 
-	Descriptiveness::PRC dummy;
-
+	vector<PRC> prc;
 	tests.back().preprocess();
-	tests.back().descriptiveness(dummy);
+	tests.back().descriptiveness(prc);
 	
+	for(auto p = prc.begin(); p != prc.end(); ++p)
+	{
+		for(auto e = p->begin(); e != p->end(); ++e)
+			cout<<"\t"<<e->p<<" "<<e->r<<"\n";
+		cout<<"\t-------------------------\n";
+	}
+
 	//tests.back().visualize();
-	for(auto it = dummy.begin(); it != dummy.end(); ++it)
-		cout<<"\t"<<it->p<<" "<<it->r<<"\n";
 
 	return 0;
 }

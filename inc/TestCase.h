@@ -28,7 +28,7 @@ public:
 	//---------------------------
 	//------- benchmarks --------
 	//---------------------------
-	void descriptiveness(Descriptiveness::PRC& out);
+	void descriptiveness(std::vector<Descriptiveness::PRC>& out);
 };
 
 #endif
