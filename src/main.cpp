@@ -11,7 +11,10 @@ int main (int argc, char** argv)
 
 	tests.back().preprocess();
 	tests.back().descriptiveness(dummy);
-	tests.back().visualize();
+	
+	//tests.back().visualize();
+	for(auto it = dummy.begin(); it != dummy.end(); ++it)
+		cout<<"\t"<<it->p<<" "<<it->r<<"\n";
 
 	return 0;
 }

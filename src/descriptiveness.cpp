@@ -9,6 +9,42 @@ static bool operator==(const pcl::Correspondence& lhs, const pcl::Correspondence
 //----------------------------------------
 //-------- FROM DESCRIPTIVENESS.h --------
 //----------------------------------------
+namespace Descriptiveness
+{
+	PREntry_ PREntry_::operator+(PREntry_ rhs) const
+	{
+		PREntry_ out;
+		out.p = this->p + rhs.p;
+		out.r = this->r + rhs.r;
+		return out;
+	}
+
+	PREntry_ PREntry_::operator*(float s) const
+	{
+		PREntry_ out;
+		out.p = this->p * s;
+		out.r = this->r * s;
+		return out;
+	}
+
+	PRC operator+(const PRC& lhs, const PRC& rhs)
+	{
+		//TODO: Assert lhs.size() == rhs.size()
+		PRC out;
+		for(int i = 0; i < lhs.size(); ++i)
+			out.push_back( lhs.at(i) + rhs.at(i) );
+		return out; //capture by move semantics
+	}
+
+	PRC operator*(const PRC& p, float s)
+	{
+		PRC out;
+		for(int i = 0; i < p.size(); ++i)
+			out.push_back( p.at(i) * s );
+		return out; //capture by move semantics
+	}
+}
+
 void Descriptiveness::groundtruthCorrespondences(const Cloud& target, Cloud& source)
 {
 	//threshold is Half of the support radius. We square it

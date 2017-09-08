@@ -47,13 +47,22 @@ void TestCase::descriptiveness(Descriptiveness::PRC& out)
 	//the keypoints inside our clouds.
 	using namespace Descriptiveness;
 
-	//Compute groundtruth correspondences
-	PRC prc;
-	groundtruthCorrespondences(scene, models.back());
-
 	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot;
-    evaluateDescriptiveness<pcl::SHOT352>( this->scene, this->models.back(), this->models.back().mapToTarget, 
-    										distSHOT, initSHOT, shot, prc );
+
+	//run descriptiveness evaluation for each model-scene pair
+	for(auto m = models.begin(); m != models.end(); ++m)
+	{
+		PRC prc;
+		groundtruthCorrespondences(scene, *m);
+
+		evaluateDescriptiveness<pcl::SHOT352>( scene, *m, m->mapToTarget, 
+												distSHOT, initSHOT, shot, prc );
+
+		out = out + prc;
+	}
+
+	//compute average of PR curves
+	out = out * (1.0f/models.size());
 }
 
 void TestCase::visualize()

@@ -121,5 +121,7 @@ void Descriptiveness::evaluateDescriptiveness(const Cloud& scene, const Cloud& m
 		float recall = (float)selected_correct.size() / all_correspondences.size();
 
 		std::cout<<"\tPrecision = "<<precision*100.0f<<"\%\tRecall = "<<recall*100.0f<<"\%\n";
+
+		out.push_back( (PREntry){precision, recall} );
 	}
 }

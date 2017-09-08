@@ -8,8 +8,15 @@
 namespace Descriptiveness
 {
 	//Structure for Precision-Recall curve
-	typedef struct { float p, r; } PREntry;
+	typedef struct PREntry_ { 
+		float p, r;
+		PREntry_ operator+(PREntry_ rhs) const;
+		PREntry_ operator*(float s) const;
+	} PREntry;
+
 	typedef std::vector<PREntry> PRC;
+	PRC operator+(const PRC& lhs, const PRC& rhs);
+	PRC operator*(const PRC& p, float s);
 
 	template<typename DescType>
 	using DistanceMetric = float(*)(const DescType& lhs, const DescType& rhs);
