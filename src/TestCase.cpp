@@ -1,6 +1,6 @@
 #include "../inc/TestCase.h"
 #include "../inc/preprocessing.h"
-#include "../inc/preprocessing.h"
+#include "../inc/callbacks.h"
 
 #include <string>
 #include <iostream>
@@ -11,98 +11,34 @@
 #include <pcl/registration/correspondence_estimation.h>
 #include <pcl/registration/correspondence_rejection_sample_consensus.h>
 
-#include <pcl/features/shot_omp.h>
-#include <pcl/features/impl/shot_omp.hpp>
-
-#include <pcl/features/fpfh_omp.h>
-#include <pcl/features/impl/fpfh_omp.hpp>
-
 //----------------------------------
 //-------- FROM TESTCASE.H ---------
 //----------------------------------
-template<typename PointOutT>
-void initSHOT(const Cloud& in, pcl::Feature<pcl::PointXYZRGB,PointOutT>& desc)
-{
-	std::cout<<"Initializing SHOT\n";
-	
-	typedef pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> SHOT_t;
-
-	//downcasting. This is safe if you're not mixing 
-	//different descriptors and init functions!!!
-	SHOT_t& shot = (SHOT_t&)(desc);
-
-	shot.setRadiusSearch(in.support_radius);
-	shot.setNumberOfThreads(4);
-	shot.setInputNormals(in.points.n);
-}
-
-template<typename PointOutT>
-void initFPFH(const Cloud& in, pcl::Feature<pcl::PointXYZRGB,PointOutT>& desc)
-{
-	std::cout<<"Initializing FPFH\n";
-	
-	typedef pcl::FPFHEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::FPFHSignature33> FPFH_t;
-
-	//downcasting. This is safe if you're not mixing 
-	//different descriptors and init functions!!!
-	FPFH_t& fpfh = (FPFH_t&)(desc);
-
-	fpfh.setRadiusSearch(in.support_radius);
-	fpfh.setNumberOfThreads(4);
-	fpfh.setInputNormals(in.points.n);
-}
-
-template<typename PointOutT>
-float distSHOT(const PointOutT& lhs, const PointOutT& rhs)
-{
-	float acc = 0.0f;
-	for(int i = 0; i < 352; ++i)
-		acc += pow(lhs.descriptor[i]-rhs.descriptor[i], 2.0f);
-	return sqrt(acc);
-}
-
-template<typename PointOutT>
-float distFPFH(const PointOutT& lhs, const PointOutT& rhs)
-{
-	float acc = 0.0f;
-	for(int i = 0; i < 33; ++i)
-		acc += pow(lhs.histogram[i]-rhs.histogram[i], 2.0f);
-	return sqrt(acc);
-}
-
 void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 {
 	//We assume preprocess() was already called, so we have
 	//the keypoints inside our clouds.
 	using namespace Descriptiveness;
 
-	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot; 
-	PRC prcSHOT; prcSHOT.resize( Parameters::getNSteps() );
-	
-	pcl::FPFHEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::FPFHSignature33> fpfh; 
-	PRC prcFPFH; prcFPFH.resize( Parameters::getNSteps() );
-
 	out.resize( 2 );
 
-	//run descriptiveness evaluation for each model-scene pair
+	//precompute groundtruths
 	for(auto m = models.begin(); m != models.end(); ++m)
-	{
 		groundtruthCorrespondences(scene, *m);
 
-		PRC prc1;
-		evaluateDescriptiveness<pcl::SHOT352>( scene, *m, m->mapToTarget, 
-												distSHOT, initSHOT, shot, prc1 );
-		prcSHOT = prcSHOT + prc1;
+	//benchmark each descriptor
+	// TODO: Think of a better way of doing this =/
+	// apparently, there's Hana library which can do
+	// a for_each over a std::tuple
+	PRC prcSHOT;
+	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot;
+	descriptorPRC(distSHOT, initSHOT, shot, prcSHOT);
+	out.push_back( prcSHOT );
 
-		PRC prc2;
-		evaluateDescriptiveness<pcl::FPFHSignature33>( scene, *m, m->mapToTarget, 
-												distFPFH, initFPFH, fpfh, prc2 );
-		prcFPFH = prcFPFH + prc2;
-	}
-
-	//compute average of PR curves
-	out.push_back( prcSHOT * (1.0f/models.size()) );
-	out.push_back( prcFPFH * (1.0f/models.size()) );
+	PRC prcFPFH;
+	pcl::FPFHEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::FPFHSignature33> fpfh;
+	descriptorPRC(distFPFH, initFPFH, fpfh, prcFPFH);
+	out.push_back( prcFPFH );
 }
 
 void TestCase::visualize()

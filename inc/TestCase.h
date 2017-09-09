@@ -13,6 +13,12 @@ private:
 	//the name of this test case. For display purposes only.
 	std::string name;
 
+	template<typename DescType>
+	void descriptorPRC(Descriptiveness::DistanceMetric<DescType> dist, 
+						FeatureInitializer<DescType> initFeature,
+						pcl::Feature<pcl::PointXYZRGB, DescType>& featureEstimation,
+						Descriptiveness::PRC& out);
+
 public:
 	//Loads .EXP file and fills the OUT vector
 	//with the test cases described in it
@@ -30,5 +36,7 @@ public:
 	//---------------------------
 	void descriptiveness(std::vector<Descriptiveness::PRC>& out);
 };
+
+#include "impl/TestCase.hpp"
 
 #endif

@@ -99,7 +99,7 @@ void Descriptiveness::evaluateDescriptiveness(const Cloud& scene, const Cloud& m
 
 	//4. Select correspondences based on NNDR. This will be used to create PRC.
 	int n = Parameters::getNSteps();
-	for(int i = 0; i < n; ++i)
+	for(int i = 1; i <= n; ++i)
 	{
 		float tau = i / (float)n;
 
