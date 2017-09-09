@@ -3,6 +3,7 @@
 
 #include "cloud.h"
 #include <vector>
+#include <string>
 #include <pcl/registration/correspondence_estimation.h>
 
 namespace Descriptiveness
@@ -14,7 +15,10 @@ namespace Descriptiveness
 		PREntry_ operator*(float s) const;
 	} PREntry;
 
-	typedef std::vector<PREntry> PRC;
+	typedef struct {
+		std::vector<PREntry> curve;
+		std::string label;
+	} PRC;
 	PRC operator+(const PRC& lhs, const PRC& rhs);
 	PRC operator*(const PRC& p, float s);
 

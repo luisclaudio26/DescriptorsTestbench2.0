@@ -31,16 +31,18 @@ namespace Descriptiveness
 	{
 		//TODO: Assert lhs.size() == rhs.size()
 		PRC out;
-		for(int i = 0; i < lhs.size(); ++i)
-			out.push_back( lhs.at(i) + rhs.at(i) );
+		for(int i = 0; i < lhs.curve.size(); ++i)
+			out.curve.push_back( lhs.curve.at(i) + rhs.curve.at(i) );
+		out.label = rhs.label;
 		return out; //capture by move semantics
 	}
 
 	PRC operator*(const PRC& p, float s)
 	{
 		PRC out;
-		for(int i = 0; i < p.size(); ++i)
-			out.push_back( p.at(i) * s );
+		for(int i = 0; i < p.curve.size(); ++i)
+			out.curve.push_back( p.curve.at(i) * s );
+		out.label = p.label;
 		return out; //capture by move semantics
 	}
 }

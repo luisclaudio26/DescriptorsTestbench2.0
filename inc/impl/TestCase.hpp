@@ -8,7 +8,7 @@ void TestCase::descriptorPRC(Descriptiveness::DistanceMetric<DescType> dist,
 	//the keypoints inside our clouds.
 	using namespace Descriptiveness;
 	
-	out.resize( Parameters::getNSteps() );
+	out.curve.resize( Parameters::getNSteps() );
 
 	//run descriptiveness evaluation for each model-scene pair
 	for(auto m = models.begin(); m != models.end(); ++m)

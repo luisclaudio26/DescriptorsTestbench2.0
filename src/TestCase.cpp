@@ -31,12 +31,14 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	PRC prcSHOT;
 	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot;
 	descriptorPRC(distSHOT, initSHOT, shot, prcSHOT);
-	out.push_back( prcSHOT );
+	out.push_back( prcSHOT ); prcSHOT.label = "SHOT";
 
+	/*
 	PRC prcFPFH;
 	pcl::FPFHEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::FPFHSignature33> fpfh;
 	descriptorPRC(distFPFH, initFPFH, fpfh, prcFPFH);
-	out.push_back( prcFPFH );
+	out.push_back( prcFPFH ); prcFPFH.label = "FPFH";
+	*/
 }
 
 void TestCase::visualize()
