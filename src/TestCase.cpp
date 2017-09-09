@@ -20,8 +20,6 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	//the keypoints inside our clouds.
 	using namespace Descriptiveness;
 
-	out.resize( 2 );
-
 	//precompute groundtruths
 	for(auto m = models.begin(); m != models.end(); ++m)
 		groundtruthCorrespondences(scene, *m);
