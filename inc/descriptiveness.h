@@ -15,9 +15,13 @@ namespace Descriptiveness
 		PREntry_ operator*(float s) const;
 	} PREntry;
 
-	typedef struct {
+	typedef struct PRC_ {
 		std::vector<PREntry> curve;
 		std::string label;
+
+		PRC_() {
+			label = std::string("");
+		}
 	} PRC;
 	PRC operator+(const PRC& lhs, const PRC& rhs);
 	PRC operator*(const PRC& p, float s);

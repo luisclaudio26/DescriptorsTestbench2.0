@@ -33,7 +33,7 @@ namespace Descriptiveness
 		PRC out;
 		for(int i = 0; i < lhs.curve.size(); ++i)
 			out.curve.push_back( lhs.curve.at(i) + rhs.curve.at(i) );
-		out.label = rhs.label;
+		out.label = lhs.label + rhs.label;
 		return out; //capture by move semantics
 	}
 

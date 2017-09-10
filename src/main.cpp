@@ -52,10 +52,7 @@ int main (int argc, char** argv)
 	for(auto p = prc.begin(); p != prc.end(); ++p)
 	{
 		std::string filepath(dir_path + "/" + p->label + ".prc");
-
-		std::cout<<filepath;
-
-		std::fstream f(filepath);
+		std::ofstream f(filepath);
 
 		for(auto e = p->curve.begin(); e != p->curve.end(); ++e)
 			f<<e->p<<" "<<e->r<<"\n";

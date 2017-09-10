@@ -43,4 +43,4 @@ benchmark
 
 # Datasets
 data/
-results/
+output/

@@ -92,6 +92,7 @@ void Descriptiveness::evaluateDescriptiveness(const Cloud& scene, const Cloud& m
 	correspondenceEstimationNNDR<DescType>(scene_desc, model_desc, dist, all_correspondences);
 
 	//4. Among all_correspondences, select the correct ones according to the groundtruth
+	// These will be the union of True Positive and False Negative.
 	pcl::Correspondences correct;
 	filterByGroundtruth(all_correspondences, groundtruth, correct);
 
@@ -118,7 +119,7 @@ void Descriptiveness::evaluateDescriptiveness(const Cloud& scene, const Cloud& m
 		float precision = selected_correspondences.size() == 0 ?
 							0 : (float)selected_correct.size() / selected_correspondences.size();
 		
-		float recall = (float)selected_correct.size() / all_correspondences.size();
+		float recall = (float)selected_correct.size() / correct.size();
 
 		std::cout<<"\tPrecision = "<<precision*100.0f<<"\%\tRecall = "<<recall*100.0f<<"\%\n";
 
