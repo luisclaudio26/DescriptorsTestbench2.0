@@ -40,7 +40,7 @@ int main (int argc, char** argv)
 	char dir_name[100];
 	std::time_t raw_time; time(&raw_time);
 	struct tm *timeinfo = localtime( &raw_time );
-	strftime(dir_name, 100, "%F_%H-%M-%S", timeinfo);
+	strftime(dir_name, 100, "%F_%Hh%Mm%Ss", timeinfo);
 
 	std::string dir_path = std::string("../output/") + dir_name;
 	boost::filesystem::create_directories( dir_path );
