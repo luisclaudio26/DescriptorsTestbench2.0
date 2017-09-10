@@ -9,22 +9,9 @@
 
 #define OVER_PI 0.318309886
 
-//------------------------------------------
-//---------- FROM PREPROCESSING.H ----------
-//------------------------------------------
-void Preprocessing::extractKeypoints(const PointNormal& points, float resolution, 
-									float support_radius, const PointNormal& keypoints)
+static void keypointsISS(const PointNormal& points, float resolution, 
+							float support_radius, const PointNormal& keypoints)
 {
-	pcl::PointCloud<pcl::PointXYZRGB> non_filtered;
-	pcl::PointCloud<pcl::Normal> non_filtered_n;
-
-	//Keypoints are stored in a regular cloud. We then pass
-	//the original cloud (IN) as the search surface for the
-	//keypoints cloud, so features will be computed for
-	//keypoints but using all points in the original cloud
-	//std::cout << "Extracting keypoints...";
-
-	//--------- ISS Keypoints
 	pcl::search::KdTree<pcl::PointXYZRGB>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGB>());
 	pcl::ISSKeypoint3D<pcl::PointXYZRGB, pcl::PointXYZRGB> detector;
 	
@@ -42,51 +29,40 @@ void Preprocessing::extractKeypoints(const PointNormal& points, float resolution
 	detector.setNormalRadius(4.0f * resolution );
 	detector.setBorderRadius(1.0f * resolution );
  
-	detector.compute(non_filtered);
-	pcl::copyPointCloud(*points.n, *(detector.getKeypointsIndices()), non_filtered_n);
+	detector.compute( *keypoints.p );
+	pcl::copyPointCloud(*points.n, *(detector.getKeypointsIndices()), *keypoints.n);
+}
 
-	std::cout<<"\tN Points: "<<points.p->size()<<" N keypoints: "<<non_filtered.size()<<"\n";
-	std::cout<<"\tN normal points: "<<points.n->size()<<" N normal keypoints: "<<non_filtered_n.size()<<"\n";
+static void keypointsUniformSampling(const PointNormal& points, float resolution, 
+										float support_radius, const PointNormal& keypoints)
+{
+	pcl::PointCloud<pcl::PointXYZRGB> non_radius_filtered;
+	pcl::PointCloud<pcl::Normal> non_radius_filtered_n;
 
-	//copy clouds
-	*keypoints.p = non_filtered;
-	*keypoints.n = non_filtered_n;
-
-	//--------- Uniform sampling 
-	/*
 	pcl::UniformSampling<pcl::PointXYZRGB> scene_voxelgrid;
 	scene_voxelgrid.setInputCloud(points.p);
 	scene_voxelgrid.setRadiusSearch(Parameters::getUniformSamplingDensity()*resolution);
-	scene_voxelgrid.filter(non_filtered); 
-	*/
+	scene_voxelgrid.filter(non_radius_filtered);
 
-	//--------- extract normals
-	//TODO: HA! PCL IMPLEMENTATION OF UNIFORMSAMPLING WON'T FILL
-	//GET REMOVED INDICES. FML. Gotta either fix this here somehow
-	//or recompile the whole shit.
-	//UPDATE: Latest version of PCL has correctly implemented it.
-	
-	/*
-	pcl::copyPointCloud(*points.n, *(scene_voxelgrid.getRemovedIndices()), non_filtered_n);
-	*/
+	//extract normals
+	// TODO: HA! PCL IMPLEMENTATION OF UNIFORMSAMPLING WON'T FILL
+	// GET REMOVED INDICES. FML. Gotta either fix this here somehow
+	// or recompile the whole shit.
+	// UPDATE: Latest version of PCL has correctly implemented it. Gotta
+	// test this code against new version of the library.
+	pcl::copyPointCloud(*points.n, *(scene_voxelgrid.getRemovedIndices()), non_radius_filtered_n);
 
-	//---------- Clean keypoint cloud
-	//We loop over the keypoints and eliminate all
-	//points whose neighbourhood has less then 5
-	//neighbours.
-	//TODO: There's a function to do this
-	/*
+	//Clean keypoint cloud
+	// We loop over the keypoints and eliminate all
+	// points whose neighbourhood has less then 5
+	// neighbours.
 	pcl::search::KdTree<pcl::PointXYZRGB> kdtree;
 	kdtree.setInputCloud(points.p);
-	*/
 
-	//std::cout<<"Keypoints before: "<<non_filtered.size()<<std::endl;
-
-	/*
 	int c = 0;
-	for(int p_id = 0; p_id < non_filtered.size(); ++p_id)
+	for(int p_id = 0; p_id < non_radius_filtered.size(); ++p_id)
 	{
-		pcl::PointXYZRGB& p = non_filtered[p_id];
+		pcl::PointXYZRGB& p = non_radius_filtered[p_id];
 
 		std::vector<int> indices; std::vector<float> dist;
 		kdtree.radiusSearch(p, support_radius, indices, dist);
@@ -96,8 +72,8 @@ void Preprocessing::extractKeypoints(const PointNormal& points, float resolution
 			//std::cout<<std::endl<<++c<<" Keypoint with less then 5 neighbours in support radius!\n";
 
 			//remove point and corresponding normal
-			non_filtered.erase(non_filtered.begin() + p_id);
-			non_filtered_n.erase(non_filtered_n.begin() + p_id);
+			non_radius_filtered.erase(non_radius_filtered.begin() + p_id);
+			non_radius_filtered_n.erase(non_radius_filtered_n.begin() + p_id);
 
 			//decrease p_id, so we effectively test the
 			//next point in cloud (failing in doing so results
@@ -107,11 +83,32 @@ void Preprocessing::extractKeypoints(const PointNormal& points, float resolution
 	}
 
 	//copy clouds
-	*keypoints.p = non_filtered;
-	*keypoints.n = non_filtered_n;
+	*keypoints.p = non_radius_filtered;
+	*keypoints.n = non_radius_filtered_n;
+}
 
-	std::cout<<"N keypoints: "<<keypoints.p->size()<<std::endl;
-	*/
+//------------------------------------------
+//---------- FROM PREPROCESSING.H ----------
+//------------------------------------------
+void Preprocessing::extractKeypoints(const PointNormal& points, float resolution, 
+									float support_radius, const PointNormal& keypoints)
+{
+	//Keypoints are stored in a regular cloud. We then pass
+	//the original cloud (IN) as the search surface for the
+	//keypoints cloud, so features will be computed for
+	//keypoints but using all points in the original cloud
+
+	switch( Parameters::getKeypointMethod() )
+	{
+	case Parameters::UNIFORM_SAMPLING:
+		keypointsUniformSampling(points, resolution, support_radius, keypoints);
+		break;
+	case Parameters::ISS:
+		keypointsISS(points, resolution, support_radius, keypoints);
+		break;
+	}
+
+	std::cout<<"\tN Points: "<<points.p->size()<<" N keypoints: "<<keypoints.p->size()<<"\n";
 }
 
 void Preprocessing::cleanNaNNormals(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& p_cloud, 

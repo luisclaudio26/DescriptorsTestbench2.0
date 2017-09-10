@@ -11,6 +11,24 @@ const float OVER_PI = 0.3183098861f;
 //TODO: this is not cool, but... =X
 class Parameters
 {
+public:
+	enum KeypointMethod {
+		UNIFORM_SAMPLING, ISS
+	};
+
+	void loadFromFile(const string& fp);
+
+	static unsigned int getNThreads() { return Parameters::N_THREADS; }
+	static float getSupportRadiusAlpha() { return Parameters::SUPPORT_RADIUS_ALPHA; }
+	static int getNSteps() { return Parameters::N_STEPS_DISTANCE_THRESHOLD; }
+	static float getMeshResFactor() { return Parameters::MESH_RESOLUTION_FACTOR; }
+	static float getMeshAreaCorrection() { return Parameters::MESH_AREA_CORRECTION; }
+	static float getNormalRadiusFactor() { return Parameters::NORMAL_SEARCH_RADIUS; }
+	static float getMinNeighbors() { return Parameters::MIN_NEIGHBORS; }
+	static float getRANSACThreshold() { return Parameters::RANSAC_THRESHOLD; }
+	static float getUniformSamplingDensity() { return Parameters::UNIFORM_SAMPLING_DENSITY; }
+	static KeypointMethod getKeypointMethod() { return KEYPOINT_METHOD; }
+	
 private:
 	//Maximum of threads we can use when trying
 	//to parallelize tasks.
@@ -55,26 +73,9 @@ private:
 	static float UNIFORM_SAMPLING_DENSITY;
 
 	//Choose Uniform Sampling or ISS Keypoints
-	enum KeypointMethod {
-		UNIFORM_SAMPLING, ISS
-	};
-
 	static KeypointMethod KEYPOINT_METHOD;
 
-public:
 
-	void loadFromFile(const string& fp);
-
-	static unsigned int getNThreads() { return Parameters::N_THREADS; }
-	static float getSupportRadiusAlpha() { return Parameters::SUPPORT_RADIUS_ALPHA; }
-	static int getNSteps() { return Parameters::N_STEPS_DISTANCE_THRESHOLD; }
-	static float getMeshResFactor() { return Parameters::MESH_RESOLUTION_FACTOR; }
-	static float getMeshAreaCorrection() { return Parameters::MESH_AREA_CORRECTION; }
-	static float getNormalRadiusFactor() { return Parameters::NORMAL_SEARCH_RADIUS; }
-	static float getMinNeighbors() { return Parameters::MIN_NEIGHBORS; }
-	static float getRANSACThreshold() { return Parameters::RANSAC_THRESHOLD; }
-	static float getUniformSamplingDensity() { return Parameters::UNIFORM_SAMPLING_DENSITY; }
-	static KeypointMethod getKeypointMethod() { return KEYPOINT_METHOD; }
 };
 
 #endif
