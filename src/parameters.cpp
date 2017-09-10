@@ -13,6 +13,7 @@ float Parameters::NORMAL_SEARCH_RADIUS = 3.0f;
 float Parameters::MIN_NEIGHBORS = 5;
 float Parameters::RANSAC_THRESHOLD = 0.05f;
 float Parameters::UNIFORM_SAMPLING_DENSITY = 15.0f;
+Parameters::KeypointMethod Parameters::KEYPOINT_METHOD = ISS;
 
 void Parameters::loadFromFile(const string& fp)
 {
@@ -28,6 +29,10 @@ void Parameters::loadFromFile(const string& fp)
 	reader>>Parameters::RANSAC_THRESHOLD;
 	reader>>Parameters::UNIFORM_SAMPLING_DENSITY;
 
+	int kp_method; reader>>kp_method;
+	if(kp_method == UNIFORM_SAMPLING) Parameters::KEYPOINT_METHOD = UNIFORM_SAMPLING;
+	else if(kp_method == ISS) Parameters::KEYPOINT_METHOD = ISS;
+
 	reader.close();
 
 	std::cout<<"Number of threads: "<<Parameters::N_THREADS<<std::endl;
@@ -39,6 +44,7 @@ void Parameters::loadFromFile(const string& fp)
 	std::cout<<"Minimum number of neighbors within search radius: "<<Parameters::MIN_NEIGHBORS<<std::endl;
 	std::cout<<"RANSAC Threshold: "<<Parameters::RANSAC_THRESHOLD<<std::endl;
 	std::cout<<"Uniform sampling density: "<<Parameters::UNIFORM_SAMPLING_DENSITY<<std::endl;
+	std::cout<<"Keypoint method: "<<Parameters::KEYPOINT_METHOD<<std::endl;
 
 	//we use mesh_resolution_factor inverted, so
 	//to avoid divisions

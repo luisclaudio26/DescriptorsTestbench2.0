@@ -54,6 +54,13 @@ private:
 	//keypoint detecor.
 	static float UNIFORM_SAMPLING_DENSITY;
 
+	//Choose Uniform Sampling or ISS Keypoints
+	enum KeypointMethod {
+		UNIFORM_SAMPLING, ISS
+	};
+
+	static KeypointMethod KEYPOINT_METHOD;
+
 public:
 
 	void loadFromFile(const string& fp);
@@ -67,6 +74,7 @@ public:
 	static float getMinNeighbors() { return Parameters::MIN_NEIGHBORS; }
 	static float getRANSACThreshold() { return Parameters::RANSAC_THRESHOLD; }
 	static float getUniformSamplingDensity() { return Parameters::UNIFORM_SAMPLING_DENSITY; }
+	static KeypointMethod getKeypointMethod() { return KEYPOINT_METHOD; }
 };
 
 #endif
