@@ -23,7 +23,7 @@ namespace Descriptiveness
 			label = std::string("");
 		}
 	} PRC;
-	PRC operator+(const PRC& lhs, const PRC& rhs);
+	PRC operator+(PRC& lhs, PRC& rhs);
 	PRC operator*(const PRC& p, float s);
 
 	template<typename DescType>

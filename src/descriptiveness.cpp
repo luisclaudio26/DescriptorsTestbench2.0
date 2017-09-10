@@ -1,5 +1,6 @@
 #include "../inc/descriptiveness.h"
 #include <pcl/search/kdtree.h>
+#include <iostream>
 
 static bool operator==(const pcl::Correspondence& lhs, const pcl::Correspondence& rhs)
 {
@@ -27,13 +28,23 @@ namespace Descriptiveness
 		return out;
 	}
 
-	PRC operator+(const PRC& lhs, const PRC& rhs)
+	PRC operator+(PRC& lhs, PRC& rhs)
 	{
-		//TODO: Assert lhs.size() == rhs.size()
+		if(lhs.curve.size() != rhs.curve.size())
+		{
+			std::cerr<<"\tWARNING: Adding PRCs with different sizes. Extending the smallest one.\n";
+			int max_size = std::max( lhs.curve.size(), rhs.curve.size() );
+			lhs.curve.resize(max_size);
+			rhs.curve.resize(max_size);
+		}
+		
 		PRC out;
+		
 		for(int i = 0; i < lhs.curve.size(); ++i)
 			out.curve.push_back( lhs.curve.at(i) + rhs.curve.at(i) );
+		
 		out.label = lhs.label + rhs.label;
+		
 		return out; //capture by move semantics
 	}
 

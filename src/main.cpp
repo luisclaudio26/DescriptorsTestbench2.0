@@ -25,10 +25,7 @@ int main (int argc, char** argv)
 		//accumulate set of PR curves
 		if(prc.size() < set.size()) prc.resize(set.size());
 		for(int j = 0; j < set.size(); ++j)
-		{
-			prc[j].curve.resize( set[j].curve.size() );
 			prc[j] = prc[j] + set[j];
-		}
 	}
 
 	//take average of each PR curve
