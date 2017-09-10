@@ -12,15 +12,10 @@ struct Cloud; typedef struct Cloud Cloud;
 //pcl::Feature to the derived class in question and then
 //set the parameters using the Cloud.
 template<typename PointOutT>
-using FeatureInitializer = void(*)(const struct Cloud&, pcl::Feature<pcl::PointXYZRGB,PointOutT>&);
-
-typedef struct {
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr p;
-	pcl::PointCloud<pcl::Normal>::Ptr n;	
-} PointNormal;
+using FeatureInitializer = void(*)(const struct Cloud&, pcl::Feature<pcl::PointXYZRGBNormal,PointOutT>&);
 
 struct Cloud {
-	PointNormal points, keypoints;
+	pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr points, keypoints;
 	std::vector<pcl::Vertices> meshes;
 	
 	float area, resolution, support_radius;
@@ -44,7 +39,7 @@ struct Cloud {
 
 	template<typename PointOutT>
 	void computeDescriptors(FeatureInitializer<PointOutT> initFeature,
-							pcl::Feature<pcl::PointXYZRGB,PointOutT>& featureEstimation,
+							pcl::Feature<pcl::PointXYZRGBNormal,PointOutT>& featureEstimation,
 							const typename pcl::PointCloud<PointOutT>::Ptr& out) const;
 
 };

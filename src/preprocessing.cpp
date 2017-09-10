@@ -9,15 +9,16 @@
 
 #define OVER_PI 0.318309886
 
-static void keypointsISS(const PointNormal& points, float resolution, 
-							float support_radius, const PointNormal& keypoints)
+static void keypointsISS(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& points, 
+							float resolution, float support_radius, 
+							const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& keypoints)
 {
-	pcl::search::KdTree<pcl::PointXYZRGB>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGB>());
-	pcl::ISSKeypoint3D<pcl::PointXYZRGB, pcl::PointXYZRGB> detector;
+	pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGBNormal>());
+	pcl::ISSKeypoint3D<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal> detector;
 	
 	detector.setSearchMethod(kdtree);
-	detector.setInputCloud(points.p);
-	detector.setNormals(points.n);
+	detector.setInputCloud(points);
+	detector.setNormals(points);
 	detector.setNumberOfThreads( Parameters::getNThreads() );
 
 	// these parameters were proposed by Gioia Ballin in 
@@ -29,75 +30,26 @@ static void keypointsISS(const PointNormal& points, float resolution,
 	detector.setNormalRadius(4.0f * resolution );
 	detector.setBorderRadius(1.0f * resolution );
  
-	detector.compute( *keypoints.p );
-	pcl::copyPointCloud(*points.n, *(detector.getKeypointsIndices()), *keypoints.n);
+	detector.compute( *keypoints );
 }
 
-static void keypointsUniformSampling(const PointNormal& points, float resolution, 
-										float support_radius, const PointNormal& keypoints)
+static void keypointsUniformSampling(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& points, 
+										float resolution, float support_radius, 
+										const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& keypoints)
 {
-	pcl::PointCloud<pcl::PointXYZRGB> non_radius_filtered;
-	pcl::PointCloud<pcl::Normal> non_radius_filtered_n;
-
-	pcl::UniformSampling<pcl::PointXYZRGB> scene_voxelgrid;
-	scene_voxelgrid.setInputCloud(points.p);
-	scene_voxelgrid.setRadiusSearch(Parameters::getUniformSamplingDensity()*resolution);
-	scene_voxelgrid.filter(non_radius_filtered);
-
-	//extract normals
-	// TODO: HA! PCL IMPLEMENTATION OF UNIFORMSAMPLING WON'T FILL
-	// GET REMOVED INDICES. FML. Gotta either fix this here somehow
-	// or recompile the whole shit.
-	// UPDATE: Latest version of PCL has correctly implemented it. Gotta
-	// test this code against new version of the library.
-	pcl::copyPointCloud(*points.n, *(scene_voxelgrid.getRemovedIndices()), non_radius_filtered_n);
-
-	//Clean keypoint cloud
-	// We loop over the keypoints and eliminate all
-	// points whose neighbourhood has less then 5
-	// neighbours.
-	pcl::search::KdTree<pcl::PointXYZRGB> kdtree;
-	kdtree.setInputCloud(points.p);
-
-	int c = 0;
-	for(int p_id = 0; p_id < non_radius_filtered.size(); ++p_id)
-	{
-		pcl::PointXYZRGB& p = non_radius_filtered[p_id];
-
-		std::vector<int> indices; std::vector<float> dist;
-		kdtree.radiusSearch(p, support_radius, indices, dist);
-
-		if(indices.size() < 5)
-		{
-			//std::cout<<std::endl<<++c<<" Keypoint with less then 5 neighbours in support radius!\n";
-
-			//remove point and corresponding normal
-			non_radius_filtered.erase(non_radius_filtered.begin() + p_id);
-			non_radius_filtered_n.erase(non_radius_filtered_n.begin() + p_id);
-
-			//decrease p_id, so we effectively test the
-			//next point in cloud (failing in doing so results
-			//in untested points)
-			p_id = p_id - 1;
-		}
-	}
-
-	//copy clouds
-	*keypoints.p = non_radius_filtered;
-	*keypoints.n = non_radius_filtered_n;
+	pcl::UniformSampling<pcl::PointXYZRGBNormal> scene_voxelgrid;
+	scene_voxelgrid.setInputCloud(points);
+	scene_voxelgrid.setRadiusSearch(Parameters::getUniformSamplingDensity() * resolution);
+	scene_voxelgrid.filter( *keypoints );
 }
 
 //------------------------------------------
 //---------- FROM PREPROCESSING.H ----------
 //------------------------------------------
-void Preprocessing::extractKeypoints(const PointNormal& points, float resolution, 
-									float support_radius, const PointNormal& keypoints)
+void Preprocessing::extractKeypoints(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& points, 
+									float resolution, float support_radius, 
+									const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& keypoints)
 {
-	//Keypoints are stored in a regular cloud. We then pass
-	//the original cloud (IN) as the search surface for the
-	//keypoints cloud, so features will be computed for
-	//keypoints but using all points in the original cloud
-
 	switch( Parameters::getKeypointMethod() )
 	{
 	case Parameters::UNIFORM_SAMPLING:
@@ -107,61 +59,30 @@ void Preprocessing::extractKeypoints(const PointNormal& points, float resolution
 		keypointsISS(points, resolution, support_radius, keypoints);
 		break;
 	}
-
-	std::cout<<"\tN Points: "<<points.p->size()<<" N keypoints: "<<keypoints.p->size()<<"\n";
 }
 
-void Preprocessing::cleanNaNNormals(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& p_cloud, 
-									const pcl::PointCloud<pcl::Normal>::Ptr& n_cloud)
+void Preprocessing::cleanNaNNormals(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& cloud)
 {
-	for(int n = 0; n < n_cloud->points.size(); n++)
-	{
-		//skip if normal has no NaN components
-		if (pcl_isfinite (n_cloud->points[n].normal_x) && 
-			pcl_isfinite (n_cloud->points[n].normal_y) && 
-			pcl_isfinite (n_cloud->points[n].normal_z))
-			continue;
-
-		//normal is NaN; erase it.
-		n_cloud->points.erase( n_cloud->points.begin() + n );
-		p_cloud->points.erase( p_cloud->points.begin() + n );
-
-		//we need to decrease n, because after erasing the n-th point,
-		//the (n+1)-th point will be in the n-th position, and so we
-		//need to analyze it.
-		n = n-1;
-	}
-
-	p_cloud->height = n_cloud->height = 1;
-	p_cloud->width = p_cloud->points.size();
-	n_cloud->width = n_cloud->points.size();
+	std::vector<int> dummy;
+	pcl::removeNaNNormalsFromPointCloud( *cloud, *cloud, dummy );
 }
 
-void Preprocessing::computeNormals(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& in,
-									float search_radius, const pcl::PointCloud<pcl::Normal>::Ptr& out)
+void Preprocessing::computeNormals(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& cloud, 
+									float search_radius)
 {
-	//TODO: FOR 2.5D views, flip normals towards viewpoint!
-	//std::cout << "Computing normals with search radius "<<search_radius<<"...";
-
-	pcl::search::KdTree<pcl::PointXYZRGB>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGB>());
-	pcl::NormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal> estimator;
-	estimator.setInputCloud(in);
+	pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGBNormal>());
+	pcl::NormalEstimationOMP<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal> estimator;
+	
+	estimator.setInputCloud(cloud);
 	estimator.setSearchMethod(kdtree);
 	estimator.setRadiusSearch(search_radius);
 	estimator.setNumberOfThreads(Parameters::getNThreads());
-	estimator.compute(*out);
-
-	//std::cout << "done." << std::endl;
-
-	//-------------------------
-	//--- Clean NaN normals ---
-	//-------------------------
-	//Preprocessing::cleanNaNNormals(in, out);
+	estimator.compute(*cloud);
 }
 
-void Preprocessing::cleanOutliers(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& C, float search_radius)
+void Preprocessing::cleanOutliers(pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& C, float search_radius)
 {
-	pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> ror(true);
+	pcl::RadiusOutlierRemoval<pcl::PointXYZRGBNormal> ror(true);
 
 	ror.setInputCloud( C );
 	ror.setRadiusSearch( search_radius );
@@ -182,9 +103,9 @@ float Preprocessing::computeArea(const Cloud& in)
 	{
 		//TODO: we should do some checking in case polygon is not a triangle!
 		Eigen::Vector3f v0, v1, v2;
-		v0 = in.points.p->at(f->vertices[0]).getVector3fMap();
-		v1 = in.points.p->at(f->vertices[1]).getVector3fMap();
-		v2 = in.points.p->at(f->vertices[2]).getVector3fMap();
+		v0 = in.points->at(f->vertices[0]).getVector3fMap();
+		v1 = in.points->at(f->vertices[1]).getVector3fMap();
+		v2 = in.points->at(f->vertices[2]).getVector3fMap();
 
 		//area of this triangle is (v1-v0) X (v2-v0) / 2
 		Eigen::Vector3f a = v1 - v0;
@@ -196,7 +117,7 @@ float Preprocessing::computeArea(const Cloud& in)
 	return acc;
 }
 
-float Preprocessing::computeResolution(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& in)
+float Preprocessing::computeResolution(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& in)
 {
 	//This code was taken from:
 	// http://pointclouds.org/documentation/tutorials/correspondence_grouping.php
@@ -205,7 +126,7 @@ float Preprocessing::computeResolution(const pcl::PointCloud<pcl::PointXYZRGB>::
 	int nres;
 	std::vector<int> indices (2);
 	std::vector<float> sqr_distances (2);
-	pcl::search::KdTree<pcl::PointXYZRGB> tree;
+	pcl::search::KdTree<pcl::PointXYZRGBNormal> tree;
 	tree.setInputCloud (in);
 
 	for (size_t i = 0; i < in->size (); ++i)

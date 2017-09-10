@@ -29,15 +29,20 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	// apparently, there's Hana library which can do
 	// a for_each over a std::tuple
 	PRC prcSHOT; prcSHOT.label = "SHOT";
-	pcl::SHOTEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::SHOT352> shot;
+	pcl::SHOTEstimationOMP<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, pcl::SHOT352> shot;
 	descriptorPRC(distSHOT, initSHOT, shot, prcSHOT);
 	out.push_back( prcSHOT ); 
 
+	PRC prcROPS; prcROPS.label = "RoPS";
+	pcl::ROPSEstimation<pcl::PointXYZRGBNormal, pcl::Histogram<135>> rops;
+	descriptorPRC(distROPS, initROPS, rops, prcROPS);
+	out.push_back( prcROPS );
+
 	/*
-	PRC prcFPFH;
+	PRC prcFPFH; prcFPFH.label = "FPFH";
 	pcl::FPFHEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::FPFHSignature33> fpfh;
 	descriptorPRC(distFPFH, initFPFH, fpfh, prcFPFH);
-	out.push_back( prcFPFH ); prcFPFH.label = "FPFH";
+	out.push_back( prcFPFH ); 
 	*/
 }
 
@@ -50,21 +55,21 @@ void TestCase::visualize()
 	//------------ TARGET CLOUD ------------
 	//--------------------------------------
 	//points
-	for(auto p = scene.points.p->begin(); p != scene.points.p->end(); ++p)
+	for(auto p = scene.points->begin(); p != scene.points->end(); ++p)
 		p->r = p->g = p->b = 255;
 
-	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_scene(scene.points.p);
-	viewer.addPointCloud<pcl::PointXYZRGB>(scene.points.p, rgb_scene, "scene");
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormal> rgb_scene(scene.points);
+	viewer.addPointCloud<pcl::PointXYZRGBNormal>(scene.points, rgb_scene, "scene");
 	viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1.0f, "scene");
 
 	//keypoints	
-	for(auto p = scene.keypoints.p->begin(); p != scene.keypoints.p->end(); ++p) {
+	for(auto p = scene.keypoints->begin(); p != scene.keypoints->end(); ++p) {
 		p->r = p->b = 0;
 		p->g = 255;
 	}
 
-	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_scene_kp(scene.keypoints.p);
-	viewer.addPointCloud<pcl::PointXYZRGB>(scene.keypoints.p, rgb_scene_kp, "scene_kp");
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormal> rgb_scene_kp(scene.keypoints);
+	viewer.addPointCloud<pcl::PointXYZRGBNormal>(scene.keypoints, rgb_scene_kp, "scene_kp");
 	viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3.5f, "scene_kp");
 
 	//--------------------------------------
@@ -73,25 +78,25 @@ void TestCase::visualize()
 	Cloud& model = models.back();
 
 	//points
-	for(auto p = model.points.p->begin(); p != model.points.p->end(); ++p)
+	for(auto p = model.points->begin(); p != model.points->end(); ++p)
 		p->r = p->g = p->b = 128;
 
-	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_model(model.points.p);
-	viewer.addPointCloud<pcl::PointXYZRGB>(model.points.p, rgb_model, "model");
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormal> rgb_model(model.points);
+	viewer.addPointCloud<pcl::PointXYZRGBNormal>(model.points, rgb_model, "model");
 	viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1.0f, "model");
 
 	//keypoints	
-	for(auto p = model.keypoints.p->begin(); p != model.keypoints.p->end(); ++p) {
+	for(auto p = model.keypoints->begin(); p != model.keypoints->end(); ++p) {
 		p->r = p->b = 0;
 		p->g = 255;
 	}
 
-	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_model_kp(model.keypoints.p);
-	viewer.addPointCloud<pcl::PointXYZRGB>(model.keypoints.p, rgb_model_kp, "model_kp");
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormal> rgb_model_kp(model.keypoints);
+	viewer.addPointCloud<pcl::PointXYZRGBNormal>(model.keypoints, rgb_model_kp, "model_kp");
 	viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3.5f, "model_kp");
 
 	//Won't work :( Check this after
-	viewer.addCorrespondences<pcl::PointXYZRGB>(model.keypoints.p, scene.keypoints.p, model.mapToTarget);
+	viewer.addCorrespondences<pcl::PointXYZRGBNormal>(model.keypoints, scene.keypoints, model.mapToTarget);
 
 	while (!viewer.wasStopped())
 	{

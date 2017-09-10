@@ -1,7 +1,7 @@
 template<typename DescType>
 void TestCase::descriptorPRC(Descriptiveness::DistanceMetric<DescType> dist, 
 								FeatureInitializer<DescType> initFeature,
-								pcl::Feature<pcl::PointXYZRGB, DescType>& featureEstimation,
+								pcl::Feature<pcl::PointXYZRGBNormal, DescType>& featureEstimation,
 								Descriptiveness::PRC& out)
 {
 	//We assume preprocess() was already called, so we have

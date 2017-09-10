@@ -39,13 +39,11 @@ void Cloud::loadCloud(const std::string& path, const std::string& gt)
 	pcl::PolygonMesh mesh; pcl::io::loadPolygonFilePLY(path, mesh);
 
 	//initialize point clouds
-	points.p = pcl::PointCloud<pcl::PointXYZRGB>::Ptr( new pcl::PointCloud<pcl::PointXYZRGB>() );
-	points.n = pcl::PointCloud<pcl::Normal>::Ptr( new pcl::PointCloud<pcl::Normal>() );
-	keypoints.p = pcl::PointCloud<pcl::PointXYZRGB>::Ptr( new pcl::PointCloud<pcl::PointXYZRGB>() );
-	keypoints.n = pcl::PointCloud<pcl::Normal>::Ptr( new pcl::PointCloud<pcl::Normal>() );
+	points = pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr( new pcl::PointCloud<pcl::PointXYZRGBNormal>() );
+	keypoints = pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr( new pcl::PointCloud<pcl::PointXYZRGBNormal>() );
 
 	meshes = mesh.polygons; //TODO: this is a copy, but maybe could be a move
-	pcl::fromPCLPointCloud2<pcl::PointXYZRGB>(mesh.cloud, *(points.p));
+	pcl::fromPCLPointCloud2<pcl::PointXYZRGBNormal>(mesh.cloud, *points);
 
 	//load groundtruth
 	matrixFromFile(gt, groundtruth);
@@ -56,19 +54,21 @@ void Cloud::preprocess()
 	using namespace Preprocessing;
 
 	std::cout<<"Computing basic values\n";
-	resolution = computeResolution(points.p);
+	resolution = computeResolution(points);
 	area = computeArea(*this);
 	support_radius = computeSupportRadius(area);
 	std::cout<<"\tRes = "<<resolution<<", support radius = "<<support_radius<<std::endl;
 
 	std::cout<<"Cleaning outliers\n";
-	cleanOutliers(points.p, support_radius); //THIS OPERATION INVALIDATES THE MESH!
+	cleanOutliers(points, support_radius); //THIS OPERATION INVALIDATES THE MESH!
 
-	std::cout<<"Computing normals\n";
+	std::cout<<"Computing and cleaning normals\n";
 	float normal_radius = resolution * Parameters::getNormalRadiusFactor();
-	computeNormals(points.p, normal_radius, points.n);
-	cleanNaNNormals(points.p, points.n);
+	computeNormals(points, normal_radius);
+	cleanNaNNormals(points);
 
-	std::cout<<"Extracting keypoints\n";
+	std::cout<<"Extracting and cleaning keypoints\n";
 	extractKeypoints(points, resolution, support_radius, keypoints);
+	cleanOutliers(keypoints, support_radius);
+	std::cout<<"\tExtracted "<<keypoints->size()<<" keypoints\n";
 }

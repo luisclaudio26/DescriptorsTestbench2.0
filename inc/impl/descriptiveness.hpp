@@ -65,7 +65,7 @@ void Descriptiveness::evaluateDescriptiveness(const Cloud& scene, const Cloud& m
 												const pcl::Correspondences& groundtruth,
 												DistanceMetric<DescType> dist, 
 												FeatureInitializer<DescType> initFeature,
-												pcl::Feature<pcl::PointXYZRGB, DescType>& featureEstimation,
+												pcl::Feature<pcl::PointXYZRGBNormal, DescType>& featureEstimation,
 												PRC& out)
 {
 	//TODO: THERE'S PROBABLY A BETTER WAY TO DO THINGS INSTEAD

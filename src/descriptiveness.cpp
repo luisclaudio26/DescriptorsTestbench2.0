@@ -65,17 +65,17 @@ void Descriptiveness::groundtruthCorrespondences(const Cloud& target, Cloud& sou
 	float threshold = target.support_radius * target.support_radius * 0.25f;
 
 	//KD-tree for NN searching inside scene_kp
-	pcl::search::KdTree<pcl::PointXYZRGB>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGB>());
-	kdtree->setInputCloud(target.keypoints.p);
+	pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGBNormal>());
+	kdtree->setInputCloud(target.keypoints);
 
-	for(int kp = 0; kp < source.keypoints.p->size(); ++kp)
+	for(int kp = 0; kp < source.keypoints->size(); ++kp)
 	{
-		pcl::PointXYZRGB p_source = source.keypoints.p->at(kp);
+		pcl::PointXYZRGBNormal p_source = source.keypoints->at(kp);
 
 		//p_target is p_source in target space
 		Eigen::Vector4f v4_p = source.groundtruth * p_source.getVector4fMap();
 		
-		pcl::PointXYZRGB p_target;
+		pcl::PointXYZRGBNormal p_target;
 		p_target.x = v4_p[0]; p_target.y = v4_p[1]; p_target.z = v4_p[2];
 
 		std::vector<int> ind; std::vector<float> dist;
