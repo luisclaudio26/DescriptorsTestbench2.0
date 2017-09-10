@@ -15,14 +15,34 @@
 template<typename PointOutT>
 void initROPS(const Cloud& in, pcl::Feature<pcl::PointXYZRGBNormal,PointOutT>& desc)
 {
+	const float PI = 3.141592653f;
 	std::cout<<"Initializing RoPS\n";
 	
 	typedef pcl::ROPSEstimation<pcl::PointXYZRGBNormal, pcl::Histogram<135>> ROPS_t;
 
+	//-----------------------------------
+	//------ COMPUTE TRIANGULATION ------
+	//-----------------------------------
 	// unfortunatelly we need to recompute the triangulation
 	// for the cloud, because we cleaned it in the preprocessing
 	// step and thus the original triangulation is not valid anymore
-	//pcl::GreedyProjectionTriangulation<
+	pcl::GreedyProjectionTriangulation<pcl::PointXYZRGBNormal> gp3;
+	
+	pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZRGBNormal>());
+	std::vector<pcl::Vertices> triangles;
+
+	gp3.setSearchRadius( in.resolution ); //Maximum edge length
+	gp3.setMu(2.5f); //The NN distance multiplier to obtain the final search radius.
+	gp3.setMaximumNearestNeighbors(100);
+	gp3.setMaximumSurfaceAngle( PI / 4.0f );
+	gp3.setMinimumAngle( PI / 18.0f );
+	gp3.setMaximumAngle( 2.0f * PI / 3.0f );
+	gp3.setNormalConsistency( false );
+	gp3.setSearchMethod(tree);
+	gp3.setInputCloud( in.points );
+
+	gp3.reconstruct(triangles);
+	//------------------------------------
 
 	// downcasting. This is safe if you're not mixing 
 	// different descriptors and init functions!!!
@@ -32,7 +52,7 @@ void initROPS(const Cloud& in, pcl::Feature<pcl::PointXYZRGBNormal,PointOutT>& d
 	rops.setRadiusSearch(in.support_radius);
 	rops.setNumberOfPartitionBins( 5 );
 	rops.setNumberOfRotations( 3 );
-	//rops.setTriangles();
+	rops.setTriangles( triangles );
 }
 
 template<typename PointOutT>
