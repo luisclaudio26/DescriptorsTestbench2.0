@@ -41,7 +41,9 @@ void initROPS(const Cloud& in, pcl::Feature<pcl::PointXYZRGBNormal,PointOutT>& d
 	gp3.setSearchMethod(tree);
 	gp3.setInputCloud( in.points );
 
+	std::cout<<"\tComputing triangulation\n";
 	gp3.reconstruct(triangles);
+	std::cout<<"\tdone\n";
 	//------------------------------------
 
 	// downcasting. This is safe if you're not mixing 
@@ -106,7 +108,9 @@ void initFPFH(const Cloud& in, pcl::Feature<pcl::PointXYZRGBNormal,PointOutT>& d
 	//different descriptors and init functions!!!
 	FPFH_t& fpfh = (FPFH_t&)(desc);
 
-	fpfh.setRadiusSearch(in.support_radius);
+	// Taken from FPFH tutorial in PCL page:
+ 	// IMPORTANT: the radius used here has to be larger than the radius used to estimate the surface normals!!!
+	fpfh.setRadiusSearch(in.support_radius * 0.3f);
 	fpfh.setNumberOfThreads(4);
 	fpfh.setInputNormals(in.points);
 }

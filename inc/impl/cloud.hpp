@@ -13,5 +13,7 @@ void Cloud::computeDescriptors(FeatureInitializer<PointOutT> initFeature,
 	featureEstimation.setInputCloud(this->keypoints);
 	featureEstimation.setSearchSurface(this->points);
 	
+	std::cout<<"Computing descriptor...\n";
 	featureEstimation.compute(*out);
+	std::cout<<"\tdone\n";
 }

@@ -28,23 +28,21 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	// TODO: Think of a better way of doing this =/
 	// apparently, there's Hana library which can do
 	// a for_each over a std::tuple
-	/*
 	PRC prcSHOT; prcSHOT.label = "SHOT";
 	pcl::SHOTEstimationOMP<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, pcl::SHOT352> shot;
 	descriptorPRC(distSHOT, initSHOT, shot, prcSHOT);
 	out.push_back( prcSHOT );
-	*/
 
+	/*
 	PRC prcROPS; prcROPS.label = "RoPS";
 	pcl::ROPSEstimation<pcl::PointXYZRGBNormal, pcl::Histogram<135>> rops;
 	descriptorPRC(distROPS, initROPS, rops, prcROPS);
 	out.push_back( prcROPS );
 
-	/*
 	PRC prcFPFH; prcFPFH.label = "FPFH";
-	pcl::FPFHEstimationOMP<pcl::PointXYZRGB, pcl::Normal, pcl::FPFHSignature33> fpfh;
+	pcl::FPFHEstimationOMP<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, pcl::FPFHSignature33> fpfh;
 	descriptorPRC(distFPFH, initFPFH, fpfh, prcFPFH);
-	out.push_back( prcFPFH ); 
+	out.push_back( prcFPFH );
 	*/
 }
 
@@ -97,7 +95,7 @@ void TestCase::visualize()
 	viewer.addPointCloud<pcl::PointXYZRGBNormal>(model.keypoints, rgb_model_kp, "model_kp");
 	viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3.5f, "model_kp");
 
-	//Won't work :( Check this after
+	//correspondences lines
 	viewer.addCorrespondences<pcl::PointXYZRGBNormal>(model.keypoints, scene.keypoints, model.mapToTarget);
 
 	while (!viewer.wasStopped())

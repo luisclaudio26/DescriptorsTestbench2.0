@@ -34,8 +34,8 @@ namespace Descriptiveness
 		{
 			std::cerr<<"\tWARNING: Adding PRCs with different sizes. Extending the smallest one.\n";
 			int max_size = std::max( lhs.curve.size(), rhs.curve.size() );
-			lhs.curve.resize(max_size);
-			rhs.curve.resize(max_size);
+			lhs.curve.resize(max_size, (PREntry){0.0f, 0.0f});
+			rhs.curve.resize(max_size, (PREntry){0.0f, 0.0f});
 		}
 		
 		PRC out;
@@ -43,7 +43,12 @@ namespace Descriptiveness
 		for(int i = 0; i < lhs.curve.size(); ++i)
 			out.curve.push_back( lhs.curve.at(i) + rhs.curve.at(i) );
 		
-		out.label = lhs.label + rhs.label;
+		//terrible way of avoiding writing SHOTSHOTSHOTSHOT.prc
+		//in the end, but this is not important in the benchmark
+		if(lhs.label.compare(rhs.label) == 0)
+			out.label = lhs.label;
+		else
+			out.label = lhs.label + rhs.label;
 		
 		return out; //capture by move semantics
 	}

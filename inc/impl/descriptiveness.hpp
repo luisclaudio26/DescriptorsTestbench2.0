@@ -75,6 +75,13 @@ void Descriptiveness::evaluateDescriptiveness(const Cloud& scene, const Cloud& m
 	//BE A PAIN IN THE ASS.
 	using namespace Descriptiveness;
 
+	//if one of the clouds is empty, skip this case
+	if(scene.keypoints->empty() || model.keypoints->empty())
+	{
+		std::cerr<<"\tWARNING: skipping descriptiveness evaluation because scene or model keypoint cloud is empty!\n";
+		return;
+	}
+
 	//1. Compute descriptors for keypoints in scene
 	typename pcl::PointCloud<DescType>::Ptr scene_desc( new pcl::PointCloud<DescType>() );
 	scene.computeDescriptors(initFeature, featureEstimation, scene_desc);

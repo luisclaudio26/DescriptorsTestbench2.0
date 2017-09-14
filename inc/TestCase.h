@@ -10,9 +10,6 @@ class TestCase
 private:
 	Cloud scene; std::vector<Cloud> models;
 
-	//the name of this test case. For display purposes only.
-	std::string name;
-
 	template<typename DescType>
 	void descriptorPRC(Descriptiveness::DistanceMetric<DescType> dist, 
 						FeatureInitializer<DescType> initFeature,
@@ -20,6 +17,9 @@ private:
 						Descriptiveness::PRC& out);
 
 public:
+	//the name of this test case. For display purposes only.
+	std::string name;
+
 	//Loads .EXP file and fills the OUT vector
 	//with the test cases described in it
 	static void loadTestCasesFromEXP(const std::string& path, std::vector<TestCase>& out);

@@ -19,8 +19,14 @@ int main (int argc, char** argv)
 	for(int i = 0; i < tests.size(); ++i)
 	{
 		PRCSet set;
+
+		std::cout<<"\n-------- PREPROCESSING "<<tests[i].name<<" ----------\n";
 		tests[i].preprocess();
+		std::cout<<"-------------------------------------------------------\n";
+		
+		std::cout<<"\n-------- EVALUATING DESCRIPTIVENESS ["<<tests[i].name<<"]----------\n";
 		tests[i].descriptiveness(set);
+		std::cout<<"---------------------------------------------------------------------\n";
 
 		//accumulate set of PR curves
 		if(prc.size() < set.size()) prc.resize(set.size());
