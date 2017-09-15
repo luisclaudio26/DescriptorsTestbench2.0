@@ -9,6 +9,40 @@
 #include <pcl/surface/gp3.h>
 #include <pcl/features/rops_estimation.h>
 
+#include "descriptors/bshot.h"
+#include "descriptors/impl/bshot.hpp"
+
+//-------------------------------
+//----------- B-SHOT ------------
+//-------------------------------
+template<typename PointOutT>
+void initBSHOT(const Cloud& in, pcl::Feature<pcl::PointXYZRGBNormal,PointOutT>& desc)
+{
+	std::cout<<"Initializing B-SHOT\n";
+	
+	typedef BSHOTEstimation<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, BSHOTDescriptor> BSHOT_t;
+
+	//downcasting. This is safe if you're not mixing 
+	//different descriptors and init functions!!!
+	BSHOT_t& bshot = (BSHOT_t&)(desc);
+
+	bshot.setRadiusSearch(in.support_radius);
+	bshot.setInputNormals(in.points);
+}
+
+template<typename PointOutT>
+float distBSHOT(const PointOutT& lhs, const PointOutT& rhs)
+{
+	//TODO: __builtin_popcount() is not portable!!!
+	//do some #ifs here so we can make sure it compiles
+	//on windows
+
+	float acc = 0.0f;
+	for(int i = 0; i < 352; ++i)
+		acc += __builtin_popcount(lhs.bitset[i] ^ rhs.bitset[i]);
+	return acc;
+}
+
 //-----------------------------
 //----------- RoPS ------------
 //-----------------------------

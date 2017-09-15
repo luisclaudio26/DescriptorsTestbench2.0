@@ -28,10 +28,17 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	// TODO: Think of a better way of doing this =/
 	// apparently, there's Hana library which can do
 	// a for_each over a std::tuple
+	PRC prcBSHOT; prcBSHOT.label = "B-SHOT";
+	BSHOTEstimation<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, BSHOTDescriptor> bshot;
+	descriptorPRC(distBSHOT, initBSHOT, bshot, prcBSHOT);
+	out.push_back( prcBSHOT );
+
+	/*
 	PRC prcSHOT; prcSHOT.label = "SHOT";
 	pcl::SHOTEstimationOMP<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, pcl::SHOT352> shot;
 	descriptorPRC(distSHOT, initSHOT, shot, prcSHOT);
 	out.push_back( prcSHOT );
+	*/
 
 	/*
 	PRC prcROPS; prcROPS.label = "RoPS";
