@@ -15,6 +15,33 @@
 #include "descriptors/drink.h"
 #include "descriptors/impl/drink.hpp"
 
+#include "descriptors/random_guess.h"
+
+//-------------------------------
+//----------- RANDOM ------------
+//-------------------------------
+template<typename PointOutT>
+void initRANDOM(const Cloud& in, pcl::Feature<pcl::PointXYZRGBNormal,PointOutT>& desc)
+{
+	std::cout<<"Initializing Random Descriptor...\n";
+	
+	typedef RandomGuessDescriptor<pcl::PointXYZRGBNormal, DummyDesc> Random_t;
+
+	//downcasting. This is safe if you're not mixing 
+	//different descriptors and init functions!!!
+	Random_t& random = (Random_t&)(desc);
+
+	random.setRadiusSearch(in.support_radius);
+}
+
+template<typename PointOutT>
+float distRANDOM(const PointOutT& lhs, const PointOutT& rhs)
+{
+	//just throw some random distance so our matches
+	//will be also random
+	return (float)rand() / RAND_MAX;
+}
+
 //------------------------------
 //----------- DRINK ------------
 //------------------------------
