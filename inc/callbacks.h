@@ -12,6 +12,163 @@
 #include "descriptors/bshot.h"
 #include "descriptors/impl/bshot.hpp"
 
+#include "descriptors/drink.h"
+#include "descriptors/impl/drink.hpp"
+
+//------------------------------
+//----------- DRINK ------------
+//------------------------------
+template<typename PointOutT>
+void initDRINK(const Cloud& in, pcl::Feature<pcl::PointXYZRGBNormal,PointOutT>& desc)
+{
+	std::cout<<"Initializing DRINK\n";
+	
+	typedef DRINK3Estimation<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, DRINKSignature> DRINK_t;
+
+	//downcasting. This is safe if you're not mixing 
+	//different descriptors and init functions!!!
+	DRINK_t& drink = (DRINK_t&)(desc);
+
+	drink.setRadiusSearch(in.support_radius);
+	drink.setInputNormals(in.points);
+}
+
+template<typename PointOutT>
+float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
+{
+	//TODO: __builtin_popcount() is not portable!!!
+	//do some #ifs here so we can make sure it compiles
+	//on windows
+
+	float dist = 0.0f;
+
+	//ComputeDRINK
+	/*
+	for(int j = 0; j < DRINK_N_BINS; j++)
+		dist += __builtin_popcount(lhs.histogram[j] ^ rhs.histogram[j]);
+	*/
+
+	//Test: L1 distance
+	/*
+	for(int j = 0; j < DRINK_N_BINS; j++)
+	{
+		int s = lhs.histogram[j] - rhs.histogram[j];
+		dist += s > 0 ? s : -s;
+	}
+	*/
+
+	//Test: L2 distance, square-rooted
+	/*
+	for(int j = 0; j < DRINK_N_BINS; j++)
+	{
+		int s = pow(lhs.histogram[j] - rhs.histogram[j], 2.0f);
+		dist += s;
+	}
+	dist = sqrt(dist);
+	*/
+
+	//Test: L2 distance, squared
+	/*
+	for(int j = 0; j < DRINK_N_BINS; j++)
+	{
+		int s = pow(lhs.histogram[j] - rhs.histogram[j], 2.0f);
+		dist += s;
+	}*/
+
+	//ComputeDRINK2
+	/*
+	for(int j = 0; j < BIT_STRING_SIZE; j++)
+		dist += __builtin_popcount(lhs.signature[j] ^ rhs.signature[j]);
+	*/
+
+	//ComputeDRINK3
+	/*
+	for(int j = 0; j < ORI_HIST_SIZE; j++)
+	{
+		dist += __builtin_popcount(lhs.oriHistX[j] ^ rhs.oriHistX[j]);
+		dist += __builtin_popcount(lhs.oriHistY[j] ^ rhs.oriHistY[j]);
+		dist += __builtin_popcount(lhs.oriHistZ[j] ^ rhs.oriHistZ[j]);
+	} */
+
+	//ComputeDRINK4
+	/*
+	for(int j = 0; j < N_LOBES; j++)
+		dist += __builtin_popcount(lhs.lobeHist[j] ^ rhs.lobeHist[j]);
+	*/
+
+	//ComputeDRINK5
+	/*
+	for(int j = 0; j < N_PAIRS; j++)
+		dist += __builtin_popcount(lhs.binarysignature[j] ^ rhs.binarysignature[j]);
+	*/
+
+	//ComputeDRINK6
+	/*
+	for(int j = 0; j < N_PAIRS; j++)
+		dist += __builtin_popcount(lhs.binarysignature[j] ^ rhs.binarysignature[j]);
+	*/
+
+	//ComputeDRINK7
+	/*
+	for(int j = 0; j < N_CUTS; j++)
+		dist += __builtin_popcount(lhs.radial_features[j] ^ rhs.radial_features[j]);
+	*/
+
+	//Test: L1 distance
+	/*
+	for(int j = 0; j < N_SECTORS; j++)
+	{
+		int s = lhs.radial_features[j] - rhs.radial_features[j];
+		dist += s > 0 ? s : -s;
+	}
+	*/
+
+	//ComputeDRINK8
+	/*
+	for(int j = 0; j < FSHOT; j++)
+	{
+		int s = pow(lhs.fshot[j] - rhs.fshot[j], 2.0f);
+		dist += s;
+	}
+	*/
+
+	//ComputeDRINK9
+	/*
+	for(int j = 0; j < PLANES_DESC; j++)
+		dist +=  __builtin_popcount(lhs.planes[j] ^ rhs.planes[j]);
+	*/
+
+	//std::cout<<"d = "<<dist<<", ";
+
+	//ComputeDRINK10
+	for(int j = 0; j < PLANES_DESC; j++)
+		dist +=  __builtin_popcount(lhs.planes[j] ^ rhs.planes[j]);
+
+	//std::cout<<"d = "<<dist<<", ";
+
+	//TEST: Weight popcount based on the importance of the bit
+	//It seems that this is VERY effective! Weights should be
+	//an increasing sequence.
+	/*
+	int weight[32];
+	for(int i = 0; i < 32; i++) weight[i] = 2*i;
+
+	for(int k = 0; k < DRINK_N_BINS; k++)
+	{
+		int a = lhs.histogram[k], b = rhs.histogram[k];
+
+		for(int shift = 0; shift < 32; ++shift)
+		{
+			int mask = 1 << shift;
+			int set = ((a & mask) ^ (b & mask)) ? 1 : 0;
+			dist += set * weight[shift];
+		}
+	}
+	*/
+
+	return dist;
+}
+
 //-------------------------------
 //----------- B-SHOT ------------
 //-------------------------------
