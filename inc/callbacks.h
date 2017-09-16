@@ -168,8 +168,10 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	//std::cout<<"d = "<<dist<<", ";
 
 	//ComputeDRINK10
+	/*
 	for(int j = 0; j < PLANES_DESC; j++)
 		dist +=  __builtin_popcount(lhs.planes[j] ^ rhs.planes[j]);
+	*/
 
 	//std::cout<<"d = "<<dist<<", ";
 

@@ -12,6 +12,7 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/common/geometry.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <fftw3.h>
 
 template<typename PointInT, typename PointNT, typename PointOutT>
 std::vector<Plane> DRINK3Estimation<PointInT,PointNT,PointOutT>::planes;
@@ -897,26 +898,24 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK10(int id_
 	//initialize output
 	memset(descriptor.planes, 0, sizeof(int) * PLANES_DESC);
 
-	Eigen::Vector3f kp = this->input_->points[id_kp].getVector3fMap();
+	Eigen::Vector3f kp = this->input_->points[id_kp];
 
 	//get transformation that maps from world space
 	//to the local reference frame
-	Eigen::Matrix3f lrf2world;
+	Eigen::Matrix3f world2lrf;
 	pcl::ReferenceFrame lrf = this->frames_->points[id_lrf];
 	
-	lrf2world.col(0)<<lrf.x_axis[0],lrf.x_axis[1],lrf.x_axis[2];
-	lrf2world.col(1)<<lrf.y_axis[0],lrf.y_axis[1],lrf.y_axis[2];
-	lrf2world.col(2)<<lrf.z_axis[0],lrf.z_axis[1],lrf.z_axis[2];
+	world2lrf.row(0)<<lrf.x_axis[0],lrf.x_axis[1],lrf.x_axis[2];
+	world2lrf.row(1)<<lrf.y_axis[0],lrf.y_axis[1],lrf.y_axis[2];
+	world2lrf.row(2)<<lrf.z_axis[0],lrf.z_axis[1],lrf.z_axis[2];
 
 	//skip NaN transformations
-	if(lrf2world(0,0) != lrf2world(0,0))
+	if(world2lrf(0,0) != world2lrf(0,0))
 		return false;
-
-	Eigen::Matrix3f world2lrf = lrf2world.transpose();
 
 	//Get neighbours in a fixed radius
 	std::vector<int> k_indices; std::vector<float> k_sqr_distances;
-	this->tree_->radiusSearch(this->input_->points[id_kp], this->search_radius_, k_indices, k_sqr_distances);
+	this->tree_->radiusSearch(kp, this->search_radius_, k_indices, k_sqr_distances);
 
 	//patch radius is simply the distance from the keypoint to the
 	//farthest neighbour. We're guaranteed to have all the neighbours
@@ -1003,7 +1002,7 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK11(int id_
 	//and number of bins in 2D histogram
 	//float l = 2.0f * t;
 	float l = this->search_radius_; float over2l = 1.0f / (2*l);
-	int n = 10; int n_points = k_indices.size();
+	int n = 15; int n_points = k_indices.size();
 
 	//project points in plane XY (perpendicular to normal, LRF's z axis)
 	//and accumulate histogram
@@ -1073,5 +1072,98 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK11(int id_
 
 	return true;
 }
+
+template<typename PointInT, typename PointNT, typename PointOutT>
+bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_kp, int id_lrf, PointOutT& descriptor)
+{
+	//Montar histograma 2D do plano XY,
+	//depois aplica FFT e tira as primeiras frequências.
+	//Isso deve ser suficiente pra dar uma "descrição geral"
+	//do patch
+
+	//initialize output
+	memset(descriptor.moments, 0, sizeof(float) * N_MOMENTS);
+
+	PointInT kp = this->input_->points[id_kp];
+
+	//translate to centroid (= kp), then rotate i.e. (Rot.Trans).x
+	Eigen::Matrix4f rot;
+	pcl::ReferenceFrame lrf = this->frames_->points[id_lrf];
+	
+	rot.col(0)<<lrf.x_axis[0],lrf.x_axis[1],lrf.x_axis[2],0.0f;
+	rot.col(1)<<lrf.y_axis[0],lrf.y_axis[1],lrf.y_axis[2],0.0f;
+	rot.col(2)<<lrf.z_axis[0],lrf.z_axis[1],lrf.z_axis[2],0.0f;
+	rot.col(3)<<0.0f,0.0f,0.0f,1.0f;
+
+	//skip NaN transformations
+	if(rot(0,0) != rot(0,0)) return false;
+
+	Eigen::Matrix4f trans = Eigen::Matrix4f::Identity();
+	trans.col(3) = kp.getVector4fMap();
+
+	//TODO: this can be made faster, but lets get it right first :(
+	Eigen::Matrix4f world2lrf = (trans * rot).inverse();
+
+	//Get neighbours in a fixed radius
+	std::vector<int> k_indices; std::vector<float> k_sqr_distances;
+	this->tree_->radiusSearch(kp, this->search_radius_, k_indices, k_sqr_distances);
+
+	//defines the size of the bounding square for projection
+	//and number of bins in 2D histogram
+	//float l = 2.0f * t;
+	float l = this->search_radius_; float over2l = 1.0f / (2*l);
+	int n = 15; int n_points = k_indices.size();
+
+	//project points in plane XY (perpendicular to normal, LRF's z axis)
+	//and accumulate histogram
+	#define AT(i,j) ((n)*(i)+(j))
+	float *hist = new float[n*n]; for(int i = 0; i < n*n; ++i) hist[i] = 0;
+
+	for(int i = 0; i < k_indices.size(); ++i)
+	{
+		//send point from global coordinates
+		//to local reference frame
+		Eigen::Vector4f p_ = world2lrf * this->surface_->points[ k_indices[i] ].getVector4fMap();
+
+		//p coordinates should be in range [-SupportRadius, SupportRadius]
+		//map it to the range [0,1]
+		//Actually, coordinates should be a little less then SupportRadius (how distant?)
+		Eigen::Vector4f offset; offset<<l,l,l,0.0f;
+		Eigen::Vector4f p = (p_ + offset) * over2l;
+
+		//make sure we're not picking the normal direction! I think this is correct
+		float x = p[0], y = p[1];
+		
+		//this should not overflow, because the probability of having a point like
+		//[0,0,SupportRadius] is very low.
+		int u = (int)(x * n), v = (int)(y * n);
+
+		//this will give us a normalized histogram
+		hist[AT(u,v)] += 1.0f / n_points;
+	}
+
+	//compute FFT of this histogram
+
+	//output this to descriptor
+
+	/*
+	for(int i = 0; i < n; ++i)
+	{
+		for(int j = 0; j < n; ++j)
+			std::cout<<hist[AT(i,j)]<<" ";
+		std::cout<<"\n";
+	}
+	std::cout<<"u11, u12, u21, u22 = "<<u11<<", "<<u12<<", "<<u21<<", "<<u22<<std::endl;
+	std::cout<<"--------------------------------------------\n";
+	*/
+
+	delete[] hist;
+
+	return true;
+}
+
+//TODO: computePointDRINK13() devia montar um histograma 3D (de preferência não-orientado),
+//e a rede neural é treinada pra minimizar distâncias entre os histogramas dos patches
+//transformados. A rede neural, nesse caso, 
 
 #endif
