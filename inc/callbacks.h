@@ -173,6 +173,10 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 
 	//std::cout<<"d = "<<dist<<", ";
 
+	//ComputeDRINK11
+	for(int j = 0; j < N_MOMENTS; j++)
+		dist += pow(lhs.moments[j] - rhs.moments[j], 2.0f);
+
 	//TEST: Weight popcount based on the importance of the bit
 	//It seems that this is VERY effective! Weights should be
 	//an increasing sequence.

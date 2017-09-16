@@ -82,7 +82,7 @@ void DRINK3Estimation<PointInT, PointNT, PointOutT>::computeFeature(PointCloudOu
 	//loop over indices. Each one of these points
 	//will have its descriptor calculated	
 	for(int i = 0; i < this->indices_->size(); ++i)
-		computePointDRINK10(this->indices_->at(i), i, out.at(i));
+		computePointDRINK11(this->indices_->at(i), i, out.at(i));
 
 	/*
 	std::cout<<"Descriptor cloud: "<<std::endl;
@@ -916,7 +916,7 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK10(int id_
 
 	//Get neighbours in a fixed radius
 	std::vector<int> k_indices; std::vector<float> k_sqr_distances;
-	this->tree_->radiusSearch(id_kp, this->search_radius_, k_indices, k_sqr_distances);
+	this->tree_->radiusSearch(this->input_->points[id_kp], this->search_radius_, k_indices, k_sqr_distances);
 
 	//patch radius is simply the distance from the keypoint to the
 	//farthest neighbour. We're guaranteed to have all the neighbours
@@ -957,6 +957,119 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK10(int id_
 		std::cout<<(descriptor.planes[i] == 0 ? 0 : 1);
 	std::cout<<std::endl<<std::endl;
 	*/
+
+	return true;
+}
+
+template<typename PointInT, typename PointNT, typename PointOutT>
+bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK11(int id_kp, int id_lrf, PointOutT& descriptor)
+{
+	//Simplified RoPS descriptor
+	//E se o histograma for RADIAL, daí usamos isso pra computar
+	//uma DCT/FFT (que é invariante a shift ? logo seria invariante
+	//a rotação?)
+	//TODO: searchRadius() quando recebe o índice do keypoint procura
+	//na search surface, não na nuvem de keypoints!!! Esse erro deve
+	//ter causado problema em vários outros testes!
+
+	//initialize output
+	memset(descriptor.moments, 0, sizeof(float) * N_MOMENTS);
+
+	PointInT kp = this->input_->points[id_kp];
+
+	//translate to centroid (= kp), then rotate i.e. (Rot.Trans).x
+	Eigen::Matrix4f rot;
+	pcl::ReferenceFrame lrf = this->frames_->points[id_lrf];
+	
+	rot.col(0)<<lrf.x_axis[0],lrf.x_axis[1],lrf.x_axis[2],0.0f;
+	rot.col(1)<<lrf.y_axis[0],lrf.y_axis[1],lrf.y_axis[2],0.0f;
+	rot.col(2)<<lrf.z_axis[0],lrf.z_axis[1],lrf.z_axis[2],0.0f;
+	rot.col(3)<<0.0f,0.0f,0.0f,1.0f;
+
+	//skip NaN transformations
+	if(rot(0,0) != rot(0,0)) return false;
+
+	Eigen::Matrix4f trans = Eigen::Matrix4f::Identity();
+	trans.col(3) = kp.getVector4fMap();
+
+	//TODO: this can be made faster, but lets get it right first :(
+	Eigen::Matrix4f world2lrf = (trans * rot).inverse();
+
+	//Get neighbours in a fixed radius
+	std::vector<int> k_indices; std::vector<float> k_sqr_distances;
+	this->tree_->radiusSearch(kp, this->search_radius_, k_indices, k_sqr_distances);
+
+	//defines the size of the bounding square for projection
+	//and number of bins in 2D histogram
+	//float l = 2.0f * t;
+	float l = this->search_radius_; float over2l = 1.0f / (2*l);
+	int n = 10; int n_points = k_indices.size();
+
+	//project points in plane XY (perpendicular to normal, LRF's z axis)
+	//and accumulate histogram
+	#define AT(i,j) ((n)*(i)+(j))
+	float *hist = new float[n*n]; for(int i = 0; i < n*n; ++i) hist[i] = 0;
+
+	for(int i = 0; i < k_indices.size(); ++i)
+	{
+		//send point from global coordinates
+		//to local reference frame
+		Eigen::Vector4f p_ = world2lrf * this->surface_->points[ k_indices[i] ].getVector4fMap();
+
+		//p coordinates should be in range [-SupportRadius, SupportRadius]
+		//map it to the range [0,1]
+		//Actually, coordinates should be a little less then SupportRadius (how distant?)
+		Eigen::Vector4f offset; offset<<l,l,l,0.0f;
+		Eigen::Vector4f p = (p_ + offset) * over2l;
+
+		//make sure we're not picking the normal direction! I think this is correct
+		float x = p[0], y = p[1];
+		
+		//this should not overflow, because the probability of having a point like
+		//[0,0,SupportRadius] is very low.
+		int u = (int)(x * n), v = (int)(y * n);
+
+		//this will give us a normalized histogram
+		hist[AT(u,v)] += 1.0f / n_points;
+	}
+
+	//compute central moments to this projection
+	float i_ = 0.0f, j_ = 0.0f;
+	for(int i = 0; i < n; ++i)
+		for(int j = 0; j < n; ++j)
+		{
+			i_ += i * hist[AT(i,j)];
+			j_ += j * hist[AT(i,j)];
+		}
+
+	float u11 = 0.0f, u12 = 0.0f, u21 = 0.0f, u22 = 0.0f;
+	for(int i = 0; i < n; ++i)
+		for(int j = 0; j < n; ++j)
+		{
+			u11 += (i - i_) * (j - j_) * hist[AT(i,j)];
+			u12 += (i - i_) * pow((j - j_), 2.0f) * hist[AT(i,j)];
+			u21 += pow((i - i_), 2.0f) * (j - j_) * hist[AT(i,j)];
+			u22 += pow((i - i_), 2.0f) * pow((j - j_), 2.0f) * hist[AT(i,j)];
+		}
+
+	//output this to descriptor
+	descriptor.moments[0] = u11;
+	descriptor.moments[1] = u12;
+	descriptor.moments[2] = u21;
+	descriptor.moments[3] = u22;
+
+	/*
+	for(int i = 0; i < n; ++i)
+	{
+		for(int j = 0; j < n; ++j)
+			std::cout<<hist[AT(i,j)]<<" ";
+		std::cout<<"\n";
+	}
+	std::cout<<"u11, u12, u21, u22 = "<<u11<<", "<<u12<<", "<<u21<<", "<<u22<<std::endl;
+	std::cout<<"--------------------------------------------\n";
+	*/
+
+	delete[] hist;
 
 	return true;
 }

@@ -25,11 +25,12 @@ const double PI = 3.14159265;
 #define FSHOT_THETA 5
 #define FSHOT FSHOT_PHI*FSHOT_THETA + DRINK_N_BINS
 
-
 #define N_PLANES 30
 #define N_NGBR 150
 //#define PLANES_DESC N_PLANES * N_NGBR  //computePointDRINK9()
 #define PLANES_DESC N_PLANES 			 //computePointDRINK10()
+
+#define N_MOMENTS 4
 
 typedef struct {
 	Eigen::Vector3f N; //normal direction
@@ -55,9 +56,7 @@ struct DRINKSignature
 
 	int planes[PLANES_DESC];
 
-	static void NNHamming(DRINKSignature point, 
-							const pcl::PointCloud<DRINKSignature>::Ptr& cloud, 
-							int& index, int& min_dist);
+	float moments[N_MOMENTS];
 };
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(DRINKSignature, 
@@ -71,6 +70,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(DRINKSignature,
 									(int[N_SECTORS], radial_features, radial_features)
 									(int[FSHOT], fshot, fshot)
 									(int[PLANES_DESC], planes, planes)
+									(float[N_MOMENTS], moments, moments)
 									)
 
 template<typename PointInT, typename PointNT, typename PointOutT = DRINKSignature>
@@ -132,6 +132,7 @@ private:
 	bool computePointDRINK8(int id_kp, int id_lrf, PointOutT& descriptor);
 	bool computePointDRINK9(int id_kp, int id_lrf, PointOutT& descriptor);
 	bool computePointDRINK10(int id_kp, int id_lrf, PointOutT& descriptor);
+	bool computePointDRINK11(int id_kp, int id_lrf, PointOutT& descriptor);
 };
 
 #include "impl/drink.hpp"
