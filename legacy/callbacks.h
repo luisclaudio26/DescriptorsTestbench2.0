@@ -102,6 +102,83 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 		dist += s;
 	}*/
 
+	//ComputeDRINK2
+	/*
+	for(int j = 0; j < BIT_STRING_SIZE; j++)
+		dist += __builtin_popcount(lhs.signature[j] ^ rhs.signature[j]);
+	*/
+
+	//ComputeDRINK3
+	/*
+	for(int j = 0; j < ORI_HIST_SIZE; j++)
+	{
+		dist += __builtin_popcount(lhs.oriHistX[j] ^ rhs.oriHistX[j]);
+		dist += __builtin_popcount(lhs.oriHistY[j] ^ rhs.oriHistY[j]);
+		dist += __builtin_popcount(lhs.oriHistZ[j] ^ rhs.oriHistZ[j]);
+	} */
+
+	//ComputeDRINK4
+	/*
+	for(int j = 0; j < N_LOBES; j++)
+		dist += __builtin_popcount(lhs.lobeHist[j] ^ rhs.lobeHist[j]);
+	*/
+
+	//ComputeDRINK5
+	/*
+	for(int j = 0; j < N_PAIRS; j++)
+		dist += __builtin_popcount(lhs.binarysignature[j] ^ rhs.binarysignature[j]);
+	*/
+
+	//ComputeDRINK6
+	/*
+	for(int j = 0; j < N_PAIRS; j++)
+		dist += __builtin_popcount(lhs.binarysignature[j] ^ rhs.binarysignature[j]);
+	*/
+
+	//ComputeDRINK7
+	/*
+	for(int j = 0; j < N_CUTS; j++)
+		dist += __builtin_popcount(lhs.radial_features[j] ^ rhs.radial_features[j]);
+	*/
+
+	//Test: L1 distance
+	/*
+	for(int j = 0; j < N_SECTORS; j++)
+	{
+		int s = lhs.radial_features[j] - rhs.radial_features[j];
+		dist += s > 0 ? s : -s;
+	}
+	*/
+
+	//ComputeDRINK8
+	/*
+	for(int j = 0; j < FSHOT; j++)
+	{
+		int s = pow(lhs.fshot[j] - rhs.fshot[j], 2.0f);
+		dist += s;
+	}
+	*/
+
+	//ComputeDRINK9
+	/*
+	for(int j = 0; j < PLANES_DESC; j++)
+		dist +=  __builtin_popcount(lhs.planes[j] ^ rhs.planes[j]);
+	*/
+
+	//std::cout<<"d = "<<dist<<", ";
+
+	//ComputeDRINK10
+	/*
+	for(int j = 0; j < PLANES_DESC; j++)
+		dist +=  __builtin_popcount(lhs.planes[j] ^ rhs.planes[j]);
+	*/
+
+	//std::cout<<"d = "<<dist<<", ";
+
+	//ComputeDRINK11
+	for(int j = 0; j < N_MOMENTS; j++)
+		dist += pow(lhs.moments[j] - rhs.moments[j], 2.0f);
+
 	//TEST: Weight popcount based on the importance of the bit
 	//It seems that this is VERY effective! Weights should be
 	//an increasing sequence.
@@ -121,16 +198,6 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 		}
 	}
 	*/
-
-	//ComputeDRINK11
-	/*
-	for(int j = 0; j < N_MOMENTS_2D; j++)
-		dist += pow(lhs.moments2d[j] - rhs.moments2d[j], 2.0f);
-	*/
-
-	//ComputeDRINK12
-	for(int j = 0; j < N_MOMENTS_3D; j++)
-		dist += pow(lhs.moments3d[j] - rhs.moments3d[j], 2.0f);
 
 	return dist;
 }
