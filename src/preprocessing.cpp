@@ -25,10 +25,10 @@ static void keypointsISS(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& poi
 	// http://www.pointclouds.org/blog/gsoc12/gballin/iss.php
 	// I didn't read the article proposing the ISS keypoint extractor,
 	// so I have no idea why this is correct, but indeed it works nicely.
-	detector.setSalientRadius(6.0f * resolution );
-	detector.setNonMaxRadius(4.0f * resolution );
-	detector.setNormalRadius(4.0f * resolution );
-	detector.setBorderRadius(1.0f * resolution );
+	detector.setSalientRadius( support_radius );
+	detector.setNonMaxRadius( support_radius );
+	detector.setNormalRadius( resolution * Parameters::getNormalRadiusFactor() );
+	detector.setBorderRadius( 1.0f * resolution );
  
 	detector.compute( *keypoints );
 }

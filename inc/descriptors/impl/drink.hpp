@@ -278,6 +278,9 @@ template<typename PointInT, typename PointNT, typename PointOutT>
 bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_kp, int id_lrf, PointOutT& descriptor)
 {
 	//---- Montar histograma 3D, tirar momentos centrais ----
+	//E se a gente pegar poucos keypoints, mas a região ao redor
+	//é maior? Estilo o próprio SP-DOCK faz, expandir a região
+	// -> o que deve inclusive ser mais rápido que só 
 
 	//initialize output
 	memset(descriptor.moments3d, 0, sizeof(float) * N_MOMENTS_3D);
@@ -310,7 +313,7 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_
 	//and number of bins in 2D histogram
 	//float l = 2.0f * t;
 	float l = this->search_radius_; float over2l = 1.0f / (2*l);
-	int n = 6; int n_points = k_indices.size();
+	int n = 9; int n_points = k_indices.size();
 
 	//accumulate 3D rectangular histogram aligned with LRF
 	#define AT_(i,j,k) ( n*n*(k) + n*(i) + (j) )
@@ -347,11 +350,10 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_
 		for(int i = 0; i < n; ++i)
 			for(int j = 0; j < n; ++j)
 			{
-				i_ += hist[AT_(i,j,k)];
-				j_ += hist[AT_(i,j,k)];
-				k_ += hist[AT_(i,j,k)];
+				i_ += i * hist[AT_(i,j,k)];
+				j_ += j * hist[AT_(i,j,k)];
+				k_ += k * hist[AT_(i,j,k)];
 			}
-	i_ /= n; j_ /= n; k_ /= n;
 
 	float u111 = 0.0f, u112 = 0.0f, u121 = 0.0f, u122 = 0.0f;
 	float u211 = 0.0f, u212 = 0.0f, u221 = 0.0f, u222 = 0.0f;

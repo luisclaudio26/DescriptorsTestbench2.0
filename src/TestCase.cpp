@@ -34,10 +34,12 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	descriptorPRC(distDRINK, initDRINK, drink, prcDRINK);
 	out.push_back( prcDRINK );
 
+	/*
 	PRC prcRANDOM; prcRANDOM.label = "Random guess";
 	RandomGuessDescriptor<pcl::PointXYZRGBNormal, DummyDesc> random;
 	descriptorPRC(distRANDOM, initRANDOM, random, prcRANDOM);
 	out.push_back( prcRANDOM );
+	*/
 
 	/*
 	PRC prcBSHOT; prcBSHOT.label = "B-SHOT";
@@ -66,7 +68,7 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	*/
 }
 
-void TestCase::visualize()
+void TestCase::visualize(int pair)
 {
 	pcl::visualization::PCLVisualizer viewer;
 	viewer.setBackgroundColor(0.0f, 0.0f, 0.1f);
@@ -95,7 +97,7 @@ void TestCase::visualize()
 	//--------------------------------------
 	//------------ SOURCE CLOUD ------------
 	//--------------------------------------
-	Cloud& model = models.back();
+	Cloud& model = models[pair];
 
 	//points
 	for(auto p = model.points->begin(); p != model.points->end(); ++p)

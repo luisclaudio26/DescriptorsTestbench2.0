@@ -29,7 +29,7 @@ public:
 	//all calculated in this step.
 	void preprocess();
 
-	void visualize();
+	void visualize(int pair);
 
 	//---------------------------
 	//------- benchmarks --------

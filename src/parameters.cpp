@@ -5,15 +5,15 @@
 using std::ifstream;
 
 unsigned int Parameters::N_THREADS = 4;
-float Parameters::SUPPORT_RADIUS_ALPHA = 0.0054;
+float Parameters::SUPPORT_RADIUS_ALPHA = 0.004;
 int Parameters::N_STEPS_DISTANCE_THRESHOLD = 10;
 float Parameters::MESH_RESOLUTION_FACTOR = 1.0f;
 float Parameters::MESH_AREA_CORRECTION = 4.5f;
 float Parameters::NORMAL_SEARCH_RADIUS = 3.0f;
 float Parameters::MIN_NEIGHBORS = 5;
 float Parameters::RANSAC_THRESHOLD = 0.05f;
-float Parameters::UNIFORM_SAMPLING_DENSITY = 15.0f;
-Parameters::KeypointMethod Parameters::KEYPOINT_METHOD = ISS;
+float Parameters::UNIFORM_SAMPLING_DENSITY = 30.0f;
+Parameters::KeypointMethod Parameters::KEYPOINT_METHOD = UNIFORM_SAMPLING;
 
 void Parameters::loadFromFile(const string& fp)
 {

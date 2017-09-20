@@ -38,6 +38,11 @@ int main (int argc, char** argv)
 	for(auto p = prc.begin(); p != prc.end(); ++p)
 		*p = *p * (1.0f / tests.size());
 
+	//------------------------------------	
+	//-------- Visualize results ---------
+	//------------------------------------
+	tests.back().visualize( stoi(argv[2]) );
+
 	//---------------------------------	
 	//-------- Output results ---------
 	//---------------------------------

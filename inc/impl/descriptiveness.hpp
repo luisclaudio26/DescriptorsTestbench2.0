@@ -1,6 +1,9 @@
 #include <limits>
 #include "../parameters.h"
 
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/search/kdtree.h>
+
 template<typename DescType>
 void Descriptiveness::filterByNNDR(const pcl::Correspondences& matches, 
 									float NNDR, pcl::Correspondences& out)
@@ -60,6 +63,56 @@ void Descriptiveness::correspondenceEstimationNNDR(const typename pcl::PointClou
 	}
 }
 
+
+static void visualizePatchCorrespondence(const Cloud& scene, const Cloud& model, const pcl::Correspondence& c)
+{
+	pcl::visualization::PCLVisualizer viewer;
+	viewer.setBackgroundColor(0.0f, 0.0f, 0.1f);
+
+	typedef pcl::search::KdTree<pcl::PointXYZRGBNormal> Tree;
+	typedef pcl::PointCloud<pcl::PointXYZRGBNormal> RGBCloud;
+
+	//--------------------------------------
+	//------------ TARGET CLOUD ------------
+	//--------------------------------------
+	//extract patch
+	Tree tree_s; tree_s.setInputCloud(scene.points);
+	std::vector<int> indices_s; std::vector<float> dist_s;
+	tree_s.radiusSearch( scene.keypoints->at(c.index_match), scene.support_radius, indices_s, dist_s );
+	RGBCloud::Ptr patch_s(new RGBCloud()); copyPointCloud( *scene.points, indices_s, *patch_s );
+
+	for(auto p = patch_s->begin(); p != patch_s->end(); ++p)
+		p->r = p->g = p->b = 255;
+
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormal> rgb_scene(patch_s);
+	viewer.addPointCloud<pcl::PointXYZRGBNormal>(patch_s, rgb_scene, "scene");
+	viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1.0f, "scene");
+
+	//--------------------------------------
+	//------------ SOURCE CLOUD ------------
+	//--------------------------------------
+	Tree tree_m; tree_m.setInputCloud(model.points);
+	std::vector<int> indices_m; std::vector<float> dist_m;
+	tree_m.radiusSearch( model.keypoints->at(c.index_match), model.support_radius, indices_m, dist_m );
+	RGBCloud::Ptr patch_m(new RGBCloud()); copyPointCloud( *model.points, indices_m, *patch_m );
+
+	for(auto p = patch_m->begin(); p != patch_m->end(); ++p) {
+		p->g = 255; p->r = p->b = 0;
+	}
+
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormal> rgb_model(patch_m);
+	viewer.addPointCloud<pcl::PointXYZRGBNormal>(patch_m, rgb_model, "model");
+	viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1.0f, "model");
+
+	//render
+	while (!viewer.wasStopped())
+	{
+		viewer.spinOnce(100);
+		boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+	}
+}
+
+
 template<typename DescType>
 void Descriptiveness::evaluateDescriptiveness(const Cloud& scene, const Cloud& model, 
 												const pcl::Correspondences& groundtruth,
@@ -116,6 +169,15 @@ void Descriptiveness::evaluateDescriptiveness(const Cloud& scene, const Cloud& m
 		filterByGroundtruth(selected_correspondences, groundtruth, selected_correct);
 
 		std::cout<<"\tNumber of correct correspondences with NNDR < "<<tau<<": "<<selected_correct.size()<<std::endl;
+
+		//visualize random patch pair
+		static bool shown = false;
+		if(!shown && n > 0.9f)
+		{
+			int ind = rand() % selected_correspondences.size();
+			visualizePatchCorrespondence(scene, model, selected_correspondences[ind]);
+			shown = true;
+		}
 
 		//Compute statistics
 		float precision = selected_correspondences.size() == 0 ?
