@@ -172,7 +172,7 @@ void Descriptiveness::evaluateDescriptiveness(const Cloud& scene, const Cloud& m
 
 		//visualize random patch pair
 		static bool shown = false;
-		if(!shown && n > 0.9f)
+		if(!shown && tau > 0.9f)
 		{
 			int ind = rand() % selected_correspondences.size();
 			visualizePatchCorrespondence(scene, model, selected_correspondences[ind]);
