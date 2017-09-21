@@ -67,7 +67,7 @@ void Descriptiveness::groundtruthCorrespondences(const Cloud& target, Cloud& sou
 {
 	//threshold is Half of the support radius. We square it
 	//not to compute square roots.
-	float threshold = target.support_radius * target.support_radius * 0.25f;
+	float threshold = source.support_radius * source.support_radius * 0.25f;
 
 	//KD-tree for NN searching inside scene_kp
 	pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZRGBNormal>());

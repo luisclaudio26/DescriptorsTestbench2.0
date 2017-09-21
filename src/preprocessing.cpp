@@ -49,25 +49,39 @@ static void cameraSpaceUniformSampling(const pcl::PointCloud<pcl::PointXYZRGBNor
 										float resolution, float support_radius, 
 										const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& keypoints)
 {
-	int n = 10;
+	float kp_per_support_radius = 30.0f;
 
 	//get bounds
 	pcl::PointXYZRGBNormal min, max;
 	pcl::getMinMax3D<pcl::PointXYZRGBNormal>( *points, min, max);
-	float over_width = n / (max.x - min.x), over_height = n / (max.y - min.y);
+	float dx = max.x - min.x, dy = max.y - min.y;
+
+	int m = dx / resolution / kp_per_support_radius;
+	int n = dy / resolution / kp_per_support_radius;
+
+	float over_width = m/dx, over_height = n/dy;
+
+	std::cout<<"m = "<<m<<", n = "<<n<<std::endl;
 
 	//compute grid N x N
 	std::vector<std::vector<pcl::PointXYZRGBNormal>> grid;
-	grid.resize(n*n);
+	grid.resize(m*n);
 
 	for(auto p = points->begin(); p != points->end(); ++p)
 	{
 		int i = (int)((p->x - min.x) * over_width);
 		int j = (int)((p->y - min.y) * over_height);
 
-		if( i == n ) i--; if( j == n ) j--;
+		if( i == m ) i--; if( j == n ) j--;
 
-		grid[i*n + j].push_back(*p);
+		if( j*m + i >= m*n )
+		{
+			std::cout<<i<<", "<<j<<"\n";
+			std::cout<<p->x<<", "<<p->y<<"\n";
+			std::cout<<p->x - min.x<<", "<<p->y - min.y<<"\n";
+		}
+
+		grid[j*m + i].push_back(*p);
 	}
 
 	//pick a random keypoint at each cell

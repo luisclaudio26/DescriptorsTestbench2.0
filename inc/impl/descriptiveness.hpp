@@ -93,7 +93,7 @@ static void visualizePatchCorrespondence(const Cloud& scene, const Cloud& model,
 	//--------------------------------------
 	Tree tree_m; tree_m.setInputCloud(model.points);
 	std::vector<int> indices_m; std::vector<float> dist_m;
-	tree_m.radiusSearch( model.keypoints->at(c.index_match), model.support_radius, indices_m, dist_m );
+	tree_m.radiusSearch( model.keypoints->at(c.index_query), model.support_radius, indices_m, dist_m );
 	RGBCloud::Ptr patch_m(new RGBCloud()); copyPointCloud( *model.points, indices_m, *patch_m );
 
 	for(auto p = patch_m->begin(); p != patch_m->end(); ++p) {

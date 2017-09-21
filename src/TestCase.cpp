@@ -48,12 +48,10 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	out.push_back( prcBSHOT );
 	*/
 
-	/*
 	PRC prcSHOT; prcSHOT.label = "SHOT";
 	pcl::SHOTEstimationOMP<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, pcl::SHOT352> shot;
 	descriptorPRC(distSHOT, initSHOT, shot, prcSHOT);
 	out.push_back( prcSHOT );
-	*/
 
 	/*
 	PRC prcROPS; prcROPS.label = "RoPS";
