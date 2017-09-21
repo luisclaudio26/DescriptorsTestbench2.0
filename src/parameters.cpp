@@ -5,7 +5,7 @@
 using std::ifstream;
 
 unsigned int Parameters::N_THREADS = 4;
-float Parameters::SUPPORT_RADIUS_ALPHA = 0.04;
+float Parameters::SUPPORT_RADIUS_ALPHA = 0.005;
 int Parameters::N_STEPS_DISTANCE_THRESHOLD = 10;
 float Parameters::MESH_RESOLUTION_FACTOR = 1.0f;
 float Parameters::MESH_AREA_CORRECTION = 4.5f;
@@ -32,6 +32,7 @@ void Parameters::loadFromFile(const string& fp)
 	int kp_method; reader>>kp_method;
 	if(kp_method == UNIFORM_SAMPLING) Parameters::KEYPOINT_METHOD = UNIFORM_SAMPLING;
 	else if(kp_method == ISS) Parameters::KEYPOINT_METHOD = ISS;
+	else if(kp_method == CAMERA_SPACE) Parameters::KEYPOINT_METHOD = CAMERA_SPACE;
 
 	reader.close();
 

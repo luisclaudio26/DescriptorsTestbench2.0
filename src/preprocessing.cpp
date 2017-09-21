@@ -7,6 +7,7 @@
 #include <pcl/filters/uniform_sampling.h>
 #include <pcl/keypoints/iss_3d.h>
 #include <pcl/filters/shadowpoints.h>
+#include <pcl/common/common.h>
 
 #define OVER_PI 0.318309886
 
@@ -44,6 +45,36 @@ static void keypointsUniformSampling(const pcl::PointCloud<pcl::PointXYZRGBNorma
 	scene_voxelgrid.filter( *keypoints );
 }
 
+static void cameraSpaceUniformSampling(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& points, 
+										float resolution, float support_radius, 
+										const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& keypoints)
+{
+	int n = 10;
+
+	//get bounds
+	pcl::PointXYZRGBNormal min, max;
+	pcl::getMinMax3D<pcl::PointXYZRGBNormal>( *points, min, max);
+	float over_width = n / (max.x - min.x), over_height = n / (max.y - min.y);
+
+	//compute grid N x N
+	std::vector<std::vector<pcl::PointXYZRGBNormal>> grid;
+	grid.resize(n*n);
+
+	for(auto p = points->begin(); p != points->end(); ++p)
+	{
+		int i = (int)((p->x - min.x) * over_width);
+		int j = (int)((p->y - min.y) * over_height);
+
+		if( i == n ) i--; if( j == n ) j--;
+
+		grid[i*n + j].push_back(*p);
+	}
+
+	//pick a random keypoint at each cell
+	for(auto c = grid.begin(); c != grid.end(); ++c)
+		if(!c->empty())	keypoints->push_back( c->at(0) );
+}
+
 //------------------------------------------
 //---------- FROM PREPROCESSING.H ----------
 //------------------------------------------
@@ -58,6 +89,9 @@ void Preprocessing::extractKeypoints(const pcl::PointCloud<pcl::PointXYZRGBNorma
 		break;
 	case Parameters::ISS:
 		keypointsISS(points, resolution, support_radius, keypoints);
+		break;
+	case Parameters::CAMERA_SPACE:
+		cameraSpaceUniformSampling(points, resolution, support_radius, keypoints);
 		break;
 	}
 }

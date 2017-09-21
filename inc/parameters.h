@@ -13,7 +13,7 @@ class Parameters
 {
 public:
 	enum KeypointMethod {
-		UNIFORM_SAMPLING, ISS
+		UNIFORM_SAMPLING, ISS, CAMERA_SPACE
 	};
 
 	static void loadFromFile(const string& fp);
