@@ -171,7 +171,8 @@ void Descriptiveness::evaluateDescriptiveness(const Cloud& scene, const Cloud& m
 		std::cout<<"\tNumber of correct correspondences with NNDR < "<<tau<<": "<<selected_correct.size()<<std::endl;
 
 		//visualize random patch pair
-		static bool shown = false;
+		//TODO: make this parameterizable
+		static bool shown = true;
 		if(!shown && tau > 0.9f)
 		{
 			int ind = rand() % selected_correspondences.size();

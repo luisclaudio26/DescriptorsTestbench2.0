@@ -49,7 +49,7 @@ static void cameraSpaceUniformSampling(const pcl::PointCloud<pcl::PointXYZRGBNor
 										float resolution, float support_radius, 
 										const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& keypoints)
 {
-	float kp_per_support_radius = 30.0f;
+	float kp_per_support_radius = 9.0f;
 
 	//get bounds
 	pcl::PointXYZRGBNormal min, max;
@@ -61,8 +61,6 @@ static void cameraSpaceUniformSampling(const pcl::PointCloud<pcl::PointXYZRGBNor
 
 	float over_width = m/dx, over_height = n/dy;
 
-	std::cout<<"m = "<<m<<", n = "<<n<<std::endl;
-
 	//compute grid N x N
 	std::vector<std::vector<pcl::PointXYZRGBNormal>> grid;
 	grid.resize(m*n);
@@ -73,14 +71,6 @@ static void cameraSpaceUniformSampling(const pcl::PointCloud<pcl::PointXYZRGBNor
 		int j = (int)((p->y - min.y) * over_height);
 
 		if( i == m ) i--; if( j == n ) j--;
-
-		if( j*m + i >= m*n )
-		{
-			std::cout<<i<<", "<<j<<"\n";
-			std::cout<<p->x<<", "<<p->y<<"\n";
-			std::cout<<p->x - min.x<<", "<<p->y - min.y<<"\n";
-		}
-
 		grid[j*m + i].push_back(*p);
 	}
 

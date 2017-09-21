@@ -80,7 +80,7 @@ void DRINK3Estimation<PointInT, PointNT, PointOutT>::computeFeature(PointCloudOu
 	//loop over indices. Each one of these points
 	//will have its descriptor calculated	
 	for(int i = 0; i < this->indices_->size(); ++i)
-		computePointDRINK12(this->indices_->at(i), i, out.at(i));
+		computePointDRINK13(this->indices_->at(i), i, out.at(i));
 
 	/*
 	std::cout<<"Descriptor cloud: "<<std::endl;
@@ -402,6 +402,114 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_
 	*/
 
 	delete[] hist;
+
+	return true;
+}
+
+template<typename PointInT, typename PointNT, typename PointOutT>
+bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK13(int id_kp, int id_lrf, PointOutT& descriptor)
+{
+	//Normal aligned projectional statistics
+	//Project points in many planes aligned with the normal
+	//Take the central moments of each one, combine in the final descriptor
+
+	//initialize output
+	memset(descriptor.naps, 0, sizeof(float) * NAPS_PLANES * NAPS_MOMENTS);
+
+	PointInT kp = this->input_->points[id_kp];
+	Eigen::Vector3f kp_ = kp.getVector3fMap();
+
+	//check for NaNs
+	pcl::ReferenceFrame lrf = this->frames_->points[id_lrf];
+	if( lrf.x_axis[0] != lrf.x_axis[0] ||
+		lrf.y_axis[0] != lrf.y_axis[0] ||
+		lrf.z_axis[0] != lrf.z_axis[0] ) return false;
+	
+	Eigen::Vector3f normal, x;
+	normal<<lrf.z_axis[0],lrf.z_axis[1],lrf.z_axis[2];
+	x<<lrf.x_axis[0],lrf.x_axis[1],lrf.x_axis[2];
+
+	//Get neighbours in a fixed radius
+	std::vector<int> k_indices; std::vector<float> k_sqr_distances;
+	this->tree_->radiusSearch(kp, this->search_radius_, k_indices, k_sqr_distances, 200 /* tests only */);
+
+	//defines the size of the bounding square for projection
+	//and number of bins in 2D histogram
+	float l = this->search_radius_; float over2l = 1.0f / (2*l);
+	int n = 15; int n_points = k_indices.size();
+
+	const float TWO_PI = 6.283185307;
+
+	//for each plane, project points onto it
+	//accumulate histogram then take central moments
+	for(int i = 0; i < NAPS_PLANES; ++i)
+	{
+		//the planes are evenly across the 0-360 range.
+		//we the U vector of the plane is the normal itself,
+		//the V vector is obtained by rotating the X axis
+		float plane_angle = i * TWO_PI / NAPS_PLANES;
+
+		Eigen::Quaternionf x_q( 0.0f, x[0], x[1], x[2]);
+		Eigen::Quaternionf q( plane_angle, normal[0], normal[1], normal[2] );
+		q.normalize();
+
+		Eigen::Matrix<float,2,3> world2plane;
+		world2plane.row(0) = normal;
+		world2plane.row(1) = (q * x_q * q.inverse()).vec(); //this a quaternion rotation
+
+		//create and initialize histogram
+		#define AT(r,c) ((n)*(r)+(c))
+		float *hist = new float[n*n]; 
+		for(int k = 0; k < n*n; ++k) hist[k] = 0;
+
+		//now loop over points, project points onto uv-plane,
+		//build histogram and take central moments
+		for(int j = 0; j < k_indices.size(); ++j)
+		{
+			Eigen::Vector3f ngbr = this->surface_->points[k_indices[j]].getVector3fMap();
+			Eigen::Vector2f p_ = world2plane * (ngbr - kp_);
+
+			//p coordinates should be in range [-SupportRadius, SupportRadius]
+			//map it to the range [0,1]
+			//Actually, coordinates should be a little less then SupportRadius (how distant?)
+			Eigen::Vector2f offset; offset<<l,l;
+			Eigen::Vector2f p = (p_ + offset) * over2l;
+			
+			//this should not overflow, because the probability of having a point like
+			//[0,0,SupportRadius] is very low.
+			int u = (int)(p[0] * n), v = (int)(p[1] * n);
+
+			//this will give us a normalized histogram
+			hist[AT(u,v)] += 1.0f / n_points;
+		}
+
+		//compute central moments to this projection
+		float j_ = 0.0f, k_ = 0.0f;
+		for(int j = 0; j < n; ++j)
+			for(int k = 0; k < n; ++k)
+			{
+				j_ += j * hist[AT(j,k)];
+				k_ += k * hist[AT(j,k)];
+			}
+
+		float u11 = 0.0f, u12 = 0.0f, u21 = 0.0f, u22 = 0.0f;
+		for(int j = 0; j < n; ++j)
+			for(int k = 0; k < n; ++k)
+			{
+				u11 += (j - j_) * (k - k_) * hist[AT(j,k)];
+				u12 += (j - j_) * pow((k - k_), 2.0f) * hist[AT(j,k)];
+				u21 += pow((j - j_), 2.0f) * (k - k_) * hist[AT(j,k)];
+				u22 += pow((j - j_), 2.0f) * pow((k - k_), 2.0f) * hist[AT(j,k)];
+			}
+
+		//output this to descriptor
+		descriptor.naps[i*4] = u11;
+		descriptor.naps[i*4+1] = u12;
+		descriptor.naps[i*4+2] = u21;
+		descriptor.naps[i*4+3] = u22;
+
+		delete[] hist;
+	}
 
 	return true;
 }
