@@ -13,6 +13,8 @@ typedef vector<PRC> PRCSet;
 
 int main (int argc, char** argv)
 {
+	Parameters::loadFromFile( std::string(argv[2]) );
+
 	vector<TestCase> tests; PRCSet prc;
 	TestCase::loadTestCasesFromEXP( std::string(argv[1]), tests);
 
@@ -41,7 +43,7 @@ int main (int argc, char** argv)
 	//------------------------------------	
 	//-------- Visualize results ---------
 	//------------------------------------
-	tests.back().visualize( stoi(argv[2]) );
+	if(argc == 4) tests.back().visualize( stoi(argv[3]) );
 
 	//---------------------------------	
 	//-------- Output results ---------

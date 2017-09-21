@@ -6,6 +6,7 @@
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/filters/uniform_sampling.h>
 #include <pcl/keypoints/iss_3d.h>
+#include <pcl/filters/shadowpoints.h>
 
 #define OVER_PI 0.318309886
 
@@ -92,6 +93,23 @@ void Preprocessing::cleanOutliers(pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& 
 
 	std::vector<int> dummy;
 	pcl::removeNaNFromPointCloud(*C, *C, dummy);
+}
+
+void Preprocessing::cleanShadow(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& cloud, float threshold)
+{
+	//ShadowPoints cannot be done in-place
+	pcl::PointCloud<pcl::PointXYZRGBNormal> out;
+
+	pcl::ShadowPoints<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal> shadow;
+	
+	shadow.setInputCloud(cloud); 
+	shadow.setNormals(cloud);
+	shadow.setThreshold( 0.3f );
+	
+	shadow.filter( out );
+
+	//copy clean cloud back
+	*cloud = out;
 }
 
 float Preprocessing::computeArea(const Cloud& in)

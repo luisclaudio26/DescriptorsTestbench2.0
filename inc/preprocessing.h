@@ -16,6 +16,8 @@ namespace Preprocessing
 
 	void computeNormals(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& cloud, float search_radius);
 
+	void cleanShadow(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& cloud, float threshold = 0.5f);
+
 	void extractKeypoints(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& points, float resolution, 
 							float support_radius, const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& keypoints);
 }

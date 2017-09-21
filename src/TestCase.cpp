@@ -29,17 +29,17 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	// apparently, there's Hana library which can do
 	// a for_each over a std::tuple
 
+	/*
 	PRC prcDRINK; prcDRINK.label = "DRINK";
 	DRINK3Estimation<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, DRINKSignature> drink;
 	descriptorPRC(distDRINK, initDRINK, drink, prcDRINK);
 	out.push_back( prcDRINK );
+	*/
 
-	/*
 	PRC prcRANDOM; prcRANDOM.label = "Random guess";
 	RandomGuessDescriptor<pcl::PointXYZRGBNormal, DummyDesc> random;
 	descriptorPRC(distRANDOM, initRANDOM, random, prcRANDOM);
 	out.push_back( prcRANDOM );
-	*/
 
 	/*
 	PRC prcBSHOT; prcBSHOT.label = "B-SHOT";
@@ -77,8 +77,10 @@ void TestCase::visualize(int pair)
 	//------------ TARGET CLOUD ------------
 	//--------------------------------------
 	//points
+	/*
 	for(auto p = scene.points->begin(); p != scene.points->end(); ++p)
 		p->r = p->g = p->b = 255;
+	*/
 
 	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormal> rgb_scene(scene.points);
 	viewer.addPointCloud<pcl::PointXYZRGBNormal>(scene.points, rgb_scene, "scene");
@@ -100,8 +102,10 @@ void TestCase::visualize(int pair)
 	Cloud& model = models[pair];
 
 	//points
+	/*
 	for(auto p = model.points->begin(); p != model.points->end(); ++p)
 		p->r = p->g = p->b = 128;
+	*/
 
 	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormal> rgb_model(model.points);
 	viewer.addPointCloud<pcl::PointXYZRGBNormal>(model.points, rgb_model, "model");
@@ -129,9 +133,15 @@ void TestCase::visualize(int pair)
 
 void TestCase::preprocess()
 {
+	std::cout<<"--- Scene\n";
 	scene.preprocess();
+
+	int id = 0;
 	for(auto c = models.begin(); c != models.end(); ++c)
+	{
+		std::cout<<"\n--- Model "<<id++<<std::endl;
 		c->preprocess();
+	}
 }
 
 void TestCase::loadTestCasesFromEXP(const std::string& path, std::vector<TestCase>& out)

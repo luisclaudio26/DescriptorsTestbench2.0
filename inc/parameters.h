@@ -16,7 +16,7 @@ public:
 		UNIFORM_SAMPLING, ISS
 	};
 
-	void loadFromFile(const string& fp);
+	static void loadFromFile(const string& fp);
 
 	static unsigned int getNThreads() { return Parameters::N_THREADS; }
 	static float getSupportRadiusAlpha() { return Parameters::SUPPORT_RADIUS_ALPHA; }

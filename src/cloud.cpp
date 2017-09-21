@@ -42,6 +42,8 @@ void Cloud::loadCloud(const std::string& path, const std::string& gt)
 	points = pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr( new pcl::PointCloud<pcl::PointXYZRGBNormal>() );
 	keypoints = pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr( new pcl::PointCloud<pcl::PointXYZRGBNormal>() );
 
+	//TODO: REORGANIZE MESH!!! How to do it?
+
 	meshes = mesh.polygons; //TODO: this is a copy, but maybe could be a move
 	pcl::fromPCLPointCloud2<pcl::PointXYZRGBNormal>(mesh.cloud, *points);
 
@@ -66,6 +68,9 @@ void Cloud::preprocess()
 	float normal_radius = resolution * Parameters::getNormalRadiusFactor();
 	computeNormals(points, normal_radius);
 	cleanNaNNormals(points);
+
+	std::cout<<"Cleaning shadows\n";
+	cleanShadow(points);
 
 	std::cout<<"Extracting and cleaning keypoints\n";
 	extractKeypoints(points, resolution, support_radius, keypoints);
