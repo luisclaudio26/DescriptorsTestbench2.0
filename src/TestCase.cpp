@@ -39,21 +39,16 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	descriptorPRC(distRANDOM, initRANDOM, random, prcRANDOM);
 	out.push_back( prcRANDOM );
 
-	/*
 	PRC prcBSHOT; prcBSHOT.label = "B-SHOT";
 	BSHOTEstimation<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, BSHOTDescriptor> bshot;
 	descriptorPRC(distBSHOT, initBSHOT, bshot, prcBSHOT);
 	out.push_back( prcBSHOT );
-	*/
 
-	/*
 	PRC prcSHOT; prcSHOT.label = "SHOT";
 	pcl::SHOTEstimationOMP<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, pcl::SHOT352> shot;
 	descriptorPRC(distSHOT, initSHOT, shot, prcSHOT);
 	out.push_back( prcSHOT );
-	*/
 
-	/*
 	PRC prcROPS; prcROPS.label = "RoPS";
 	pcl::ROPSEstimation<pcl::PointXYZRGBNormal, pcl::Histogram<135>> rops;
 	descriptorPRC(distROPS, initROPS, rops, prcROPS);
@@ -63,7 +58,11 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	pcl::FPFHEstimationOMP<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, pcl::FPFHSignature33> fpfh;
 	descriptorPRC(distFPFH, initFPFH, fpfh, prcFPFH);
 	out.push_back( prcFPFH );
-	*/
+
+	PRC prcUSC; prcUSC.label = "USC";
+	pcl::UniqueShapeContext<pcl::PointXYZRGBNormal> usc;
+	descriptorPRC(distUSC, initUSC, usc, prcUSC);
+	out.push_back( prcUSC );
 }
 
 void TestCase::visualize(int pair)

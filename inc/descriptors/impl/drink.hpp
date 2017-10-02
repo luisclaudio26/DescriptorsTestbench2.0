@@ -80,7 +80,8 @@ void DRINK3Estimation<PointInT, PointNT, PointOutT>::computeFeature(PointCloudOu
 	//loop over indices. Each one of these points
 	//will have its descriptor calculated	
 	for(int i = 0; i < this->indices_->size(); ++i)
-		computePointDRINK13(this->indices_->at(i), i, out.at(i));
+		computePointDRINK(this->indices_->at(i), out.at(i));
+		//computePointDRINK13(this->indices_->at(i), i, out.at(i));
 
 	/*
 	std::cout<<"Descriptor cloud: "<<std::endl;

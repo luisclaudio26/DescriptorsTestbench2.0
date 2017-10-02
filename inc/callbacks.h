@@ -17,6 +17,39 @@
 
 #include "descriptors/random_guess.h"
 
+#include <pcl/features/usc.h>
+#include <pcl/features/impl/usc.hpp>
+
+//----------------------------
+//----------- USC ------------
+//----------------------------
+template<typename PointOutT>
+void initUSC(const Cloud& in, pcl::Feature<pcl::PointXYZRGBNormal, PointOutT>& desc)
+{
+	std::cout<<"Initializing USC\n";
+	
+	typedef pcl::UniqueShapeContext<pcl::PointXYZRGBNormal> USC_t;
+
+	//downcasting. This is safe if you're not mixing 
+	//different descriptors and init functions!!!
+	USC_t& usc = (USC_t&)(desc);
+
+	float r_max = in.resolution * 20.0f;
+	usc.setRadiusSearch( r_max );
+	usc.setMinimalRadius( 0.1f * r_max );
+	usc.setLocalRadius( r_max );
+	usc.setPointDensityRadius( in.resolution * 2.0f );
+}
+
+template<typename PointOutT>
+float distUSC(const PointOutT& lhs, const PointOutT& rhs)
+{
+	float acc = 0.0f;
+	for(int i = 0; i < 1960; ++i)
+		acc += pow(lhs.descriptor[i]-rhs.descriptor[i], 2.0f);
+	return sqrt(acc);
+}
+
 //-------------------------------
 //----------- RANDOM ------------
 //-------------------------------
@@ -70,10 +103,8 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	float dist = 0.0f;
 
 	//ComputeDRINK
-	/*
 	for(int j = 0; j < DRINK_N_BINS; j++)
 		dist += __builtin_popcount(lhs.histogram[j] ^ rhs.histogram[j]);
-	*/
 
 	//Test: L1 distance
 	/*
@@ -135,9 +166,11 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	*/
 
 	//ComputeDRINK13
+	/*
 	for(int j = 0; j < NAPS_PLANES * NAPS_MOMENTS; j++)
 		dist += pow(lhs.naps[j] - rhs.naps[j], 2.0f);
 	dist = sqrt(dist);
+	*/
 
 	return dist;
 }

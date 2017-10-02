@@ -5,6 +5,7 @@
 #include <pcl/filters/radius_outlier_removal.h>
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/filters/uniform_sampling.h>
+#include <pcl/filters/voxel_grid.h>
 #include <pcl/keypoints/iss_3d.h>
 #include <pcl/filters/shadowpoints.h>
 #include <pcl/common/common.h>
@@ -38,7 +39,7 @@ static void keypointsISS(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& poi
 static void keypointsUniformSampling(const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& points, 
 										float resolution, float support_radius, 
 										const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& keypoints)
-{
+{	
 	pcl::UniformSampling<pcl::PointXYZRGBNormal> scene_voxelgrid;
 	scene_voxelgrid.setInputCloud(points);
 	scene_voxelgrid.setRadiusSearch(Parameters::getUniformSamplingDensity() * resolution);
@@ -49,15 +50,15 @@ static void cameraSpaceUniformSampling(const pcl::PointCloud<pcl::PointXYZRGBNor
 										float resolution, float support_radius, 
 										const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr& keypoints)
 {
-	float kp_per_support_radius = 9.0f;
+	float kp_per_res = 10.0f;
 
 	//get bounds
 	pcl::PointXYZRGBNormal min, max;
 	pcl::getMinMax3D<pcl::PointXYZRGBNormal>( *points, min, max);
 	float dx = max.x - min.x, dy = max.y - min.y;
 
-	int m = dx / resolution / kp_per_support_radius;
-	int n = dy / resolution / kp_per_support_radius;
+	int m = dx / resolution / kp_per_res;
+	int n = dy / resolution / kp_per_res;
 
 	float over_width = m/dx, over_height = n/dy;
 
@@ -142,7 +143,7 @@ void Preprocessing::cleanShadow(const pcl::PointCloud<pcl::PointXYZRGBNormal>::P
 	
 	shadow.setInputCloud(cloud); 
 	shadow.setNormals(cloud);
-	shadow.setThreshold( 0.3f );
+	shadow.setThreshold( 0.1f );
 	
 	shadow.filter( out );
 
