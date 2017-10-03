@@ -12,7 +12,7 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/common/geometry.h>
 #include <pcl/visualization/pcl_visualizer.h>
-#include <fftw3.h>
+#include <pcl/common/common.h>
 
 /* 1) initCompute(), deinitCompute() podem ser implementados pelas
  * classes derivando de Feature. 
@@ -80,8 +80,12 @@ void DRINK3Estimation<PointInT, PointNT, PointOutT>::computeFeature(PointCloudOu
 	//loop over indices. Each one of these points
 	//will have its descriptor calculated	
 	for(int i = 0; i < this->indices_->size(); ++i)
+	{
 		computePointDRINK(this->indices_->at(i), out.at(i));
-		//computePointDRINK13(this->indices_->at(i), i, out.at(i));
+		computePointDRINK11(this->indices_->at(i), i, out.at(i));
+		computePointDRINK12(this->indices_->at(i), i, out.at(i));
+		computePointDRINK13(this->indices_->at(i), i, out.at(i));
+	}
 
 	/*
 	std::cout<<"Descriptor cloud: "<<std::endl;
@@ -310,10 +314,23 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_
 	std::vector<int> k_indices; std::vector<float> k_sqr_distances;
 	this->tree_->radiusSearch(kp, this->search_radius_, k_indices, k_sqr_distances);
 
+	//get min-max of the neighborhood. We use this info to
+	//define the optimal dimensions for the support of our
+	//3D histogram
+	float minNormal = FLT_MAX, maxNormal = -FLT_MAX;
+	for(auto i = k_indices.begin(); i != k_indices.end(); ++i)
+	{
+		Eigen::Vector4f p = world2lrf * this->surface_->points[*i].getVector4fMap();
+		if( p[2] > maxNormal ) maxNormal = p[2];
+		if( p[2] < minNormal ) minNormal = p[2];
+	}
+
 	//defines the size of the bounding square for projection
 	//and number of bins in 2D histogram
-	//float l = 2.0f * t;
 	float l = this->search_radius_; float over2l = 1.0f / (2*l);
+	Eigen::Vector4f offset; offset<<l,l,-minNormal,0.0f;
+	Eigen::Vector4f scale; scale<<over2l,over2l,0.9f/(maxNormal-minNormal),1.0f;
+
 	int n = 9; int n_points = k_indices.size();
 
 	//accumulate 3D rectangular histogram aligned with LRF
@@ -329,12 +346,11 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_
 		//p coordinates should be in range [-SupportRadius, SupportRadius]
 		//map it to the range [0,1]
 		//Actually, coordinates should be a little less then SupportRadius (how distant?)
-		Eigen::Vector4f offset; offset<<l,l,l,0.0f;
-		Eigen::Vector4f p = (p_ + offset) * over2l;
+		Eigen::Vector4f p = (p_ + offset).cwiseProduct(scale);
 
 		//take coordinates
 		float x = p[0], y = p[1], z = p[2];
-		
+
 		//this should not overflow, because the probability of having a point like
 		//[0,0,SupportRadius] is very low.
 		int u = (int)(x * n);

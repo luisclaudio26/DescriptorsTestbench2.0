@@ -103,8 +103,10 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	float dist = 0.0f;
 
 	//ComputeDRINK
+	/*
 	for(int j = 0; j < DRINK_N_BINS; j++)
 		dist += __builtin_popcount(lhs.histogram[j] ^ rhs.histogram[j]);
+	*/
 
 	//Test: L1 distance
 	/*
@@ -157,13 +159,13 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	/*
 	for(int j = 0; j < N_MOMENTS_2D; j++)
 		dist += pow(lhs.moments2d[j] - rhs.moments2d[j], 2.0f);
+	dist = sqrt(dist);
 	*/
 
 	//ComputeDRINK12
-	/*
 	for(int j = 0; j < N_MOMENTS_3D; j++)
 		dist += pow(lhs.moments3d[j] - rhs.moments3d[j], 2.0f);
-	*/
+	dist = sqrt(dist);
 
 	//ComputeDRINK13
 	/*

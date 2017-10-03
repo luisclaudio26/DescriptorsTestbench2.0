@@ -12,7 +12,6 @@ const double PI = 3.14159265;
 
 #define DRINK_N_BINS 30
 
-#define N_PLANES_MOMENTS 2
 #define N_MOMENTS_2D 4
 #define N_MOMENTS_3D 8
 

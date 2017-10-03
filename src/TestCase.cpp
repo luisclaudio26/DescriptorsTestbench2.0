@@ -34,6 +34,7 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	descriptorPRC(distDRINK, initDRINK, drink, prcDRINK);
 	out.push_back( prcDRINK );
 
+	/*
 	PRC prcRANDOM; prcRANDOM.label = "Random guess";
 	RandomGuessDescriptor<pcl::PointXYZRGBNormal, DummyDesc> random;
 	descriptorPRC(distRANDOM, initRANDOM, random, prcRANDOM);
@@ -63,6 +64,7 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	pcl::UniqueShapeContext<pcl::PointXYZRGBNormal> usc;
 	descriptorPRC(distUSC, initUSC, usc, prcUSC);
 	out.push_back( prcUSC );
+	*/
 }
 
 void TestCase::visualize(int pair)
