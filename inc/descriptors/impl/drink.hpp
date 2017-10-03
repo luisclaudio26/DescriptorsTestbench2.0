@@ -331,11 +331,12 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_
 	Eigen::Vector4f offset; offset<<l,l,-minNormal,0.0f;
 	Eigen::Vector4f scale; scale<<over2l,over2l,0.9f/(maxNormal-minNormal),1.0f;
 
-	int n = 8; int n_points = k_indices.size();
+	int I = 8, J = 8, K = 4;
+	int n_points = k_indices.size();
 
 	//accumulate 3D rectangular histogram aligned with LRF
-	#define AT_(i,j,k) ( n*n*(k) + n*(i) + (j) )
-	float *hist = new float[n*n*n]; for(int i = 0; i < n*n*n; ++i) hist[i] = 0;
+	#define AT_(i,j,k) ( I*J*(k) + I*(i) + (j) )
+	float *hist = new float[I*J*K]; for(int i = 0; i < I*J*K; ++i) hist[i] = 0;
 
 	for(int i = 0; i < k_indices.size(); ++i)
 	{
@@ -353,9 +354,9 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_
 
 		//this should not overflow, because the probability of having a point like
 		//[0,0,SupportRadius] is very low.
-		int u = (int)(x * n);
-		int v = (int)(y * n);
-		int w = (int)(z * n);
+		int u = (int)(x * I);
+		int v = (int)(y * J);
+		int w = (int)(z * K);
 
 		//this will give us a normalized histogram
 		hist[AT_(u,v,w)] += 1.0f / n_points;
@@ -363,9 +364,9 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_
 
 	//compute central moments to this projection
 	float i_ = 0.0f, j_ = 0.0f, k_ = 0.0f;
-	for(int k = 0; k < n; ++k)
-		for(int i = 0; i < n; ++i)
-			for(int j = 0; j < n; ++j)
+	for(int k = 0; k < K; ++k)
+		for(int i = 0; i < I; ++i)
+			for(int j = 0; j < J; ++j)
 			{
 				i_ += i * hist[AT_(i,j,k)];
 				j_ += j * hist[AT_(i,j,k)];
@@ -375,9 +376,9 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_
 	float u111 = 0.0f, u112 = 0.0f, u121 = 0.0f, u122 = 0.0f;
 	float u211 = 0.0f, u212 = 0.0f, u221 = 0.0f, u222 = 0.0f;
 
-	for(int k = 0; k < n; ++k)
-		for(int i = 0; i < n; ++i)
-			for(int j = 0; j < n; ++j)
+	for(int k = 0; k < K; ++k)
+		for(int i = 0; i < I; ++i)
+			for(int j = 0; j < J; ++j)
 			{
 				float di = (i - i_), dj = (j - j_), dk = (k - k_);
 				float e = hist[AT_(i,j,k)];
