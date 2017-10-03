@@ -331,7 +331,7 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK12(int id_
 	Eigen::Vector4f offset; offset<<l,l,-minNormal,0.0f;
 	Eigen::Vector4f scale; scale<<over2l,over2l,0.9f/(maxNormal-minNormal),1.0f;
 
-	int n = 9; int n_points = k_indices.size();
+	int n = 8; int n_points = k_indices.size();
 
 	//accumulate 3D rectangular histogram aligned with LRF
 	#define AT_(i,j,k) ( n*n*(k) + n*(i) + (j) )
