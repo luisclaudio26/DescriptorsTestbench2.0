@@ -511,20 +511,24 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK13(int id_
 			}
 
 		float u11 = 0.0f, u12 = 0.0f, u21 = 0.0f, u22 = 0.0f;
+
 		for(int j = 0; j < n; ++j)
 			for(int k = 0; k < n; ++k)
 			{
-				u11 += (j - j_) * (k - k_) * hist[AT(j,k)];
-				u12 += (j - j_) * pow((k - k_), 2.0f) * hist[AT(j,k)];
-				u21 += pow((j - j_), 2.0f) * (k - k_) * hist[AT(j,k)];
-				u22 += pow((j - j_), 2.0f) * pow((k - k_), 2.0f) * hist[AT(j,k)];
+				float dj = (j - j_), dk = (k - k_);
+				float e = hist[AT(j,k)];
+
+				u11 += dj * dk * e;
+				u12 += dj * dk*dk * e;
+				u21 += dj*dj * dk * e;
+				u22 += dj*dj * dk*dk *e;
 			}
 
 		//output this to descriptor
-		descriptor.naps[i*4] = u11;
-		descriptor.naps[i*4+1] = u12;
-		descriptor.naps[i*4+2] = u21;
-		descriptor.naps[i*4+3] = u22;
+		descriptor.naps[i*NAPS_MOMENTS+0] = u11;
+		descriptor.naps[i*NAPS_MOMENTS+1] = u12;
+		descriptor.naps[i*NAPS_MOMENTS+2] = u21;
+		descriptor.naps[i*NAPS_MOMENTS+3] = u22;
 
 		delete[] hist;
 	}

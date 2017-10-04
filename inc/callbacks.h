@@ -163,16 +163,16 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	*/
 
 	//ComputeDRINK12
+	/*
 	for(int j = 0; j < N_MOMENTS_3D; j++)
 		dist += pow(lhs.moments3d[j] - rhs.moments3d[j], 2.0f);
 	dist = sqrt(dist);
+	*/
 
 	//ComputeDRINK13
-	/*
 	for(int j = 0; j < NAPS_PLANES * NAPS_MOMENTS; j++)
 		dist += pow(lhs.naps[j] - rhs.naps[j], 2.0f);
 	dist = sqrt(dist);
-	*/
 
 	return dist;
 }
