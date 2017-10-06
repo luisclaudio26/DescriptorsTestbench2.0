@@ -89,16 +89,6 @@ void DRINK3Estimation<PointInT, PointNT, PointOutT>::computeFeature(PointCloudOu
 
 		std::cout<<"\rDRINK progress: "<<(int)(i*100.0f/this->indices_->size())<<"%%";
 	}
-
-	/*
-	std::cout<<"Descriptor cloud: "<<std::endl;
-	for(auto it = out.begin(); it != out.end(); ++it)
-	{
-		for(int i = 0; i < DRINK_N_BINS; i++)
-			std::cout<<it->histogram[i]<<"   ";
-		std::cout<<std::endl;
-	}
-	*/
 }
 
 template<typename PointInT, typename PointNT, typename PointOutT>

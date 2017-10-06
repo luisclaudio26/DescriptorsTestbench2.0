@@ -133,7 +133,7 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	}*/
 
 	//TEST: Weight popcount based on the importance of the bit
-	//It seems that this is VERY effective! Weights should be
+	//It seems that this is effective. Weights should be
 	//an increasing sequence.
 	/*
 	int weight[32];

@@ -29,7 +29,7 @@ void TestCase::descriptiveness(std::vector<Descriptiveness::PRC>& out)
 	// apparently, there's Hana library which can do
 	// a for_each over a std::tuple
 
-	PRC prcDRINK; prcDRINK.label = "DRINK";
+	PRC prcDRINK; prcDRINK.label = "NAPS";
 	DRINK3Estimation<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal, DRINKSignature> drink;
 	descriptorPRC(distDRINK, initDRINK, drink, prcDRINK);
 	out.push_back( prcDRINK );
