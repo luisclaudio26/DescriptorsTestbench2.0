@@ -153,8 +153,10 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	*/
 
 	//ComputeDRINK10
+	/*
 	for(int j = 0; j < PLANES_DESC; j++)
 		dist +=  __builtin_popcount(lhs.planes[j] ^ rhs.planes[j]);
+	*/
 
 	//ComputeDRINK11
 	/*
@@ -171,11 +173,9 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	*/
 
 	//ComputeDRINK13
-	/*
 	for(int j = 0; j < NAPS_PLANES * NAPS_MOMENTS; j++)
 		dist += pow(lhs.naps[j] - rhs.naps[j], 2.0f);
 	dist = sqrt(dist);
-	*/
 
 	return dist;
 }

@@ -82,10 +82,10 @@ void DRINK3Estimation<PointInT, PointNT, PointOutT>::computeFeature(PointCloudOu
 	for(int i = 0; i < this->indices_->size(); ++i)
 	{
 		//computePointDRINK(this->indices_->at(i), out.at(i));
-		computePointDRINK10(this->indices_->at(i), i, out.at(i));
+		//computePointDRINK10(this->indices_->at(i), i, out.at(i));
 		//computePointDRINK11(this->indices_->at(i), i, out.at(i));
 		//computePointDRINK12(this->indices_->at(i), i, out.at(i));
-		//computePointDRINK13(this->indices_->at(i), i, out.at(i));
+		computePointDRINK13(this->indices_->at(i), i, out.at(i));
 
 		std::cout<<"\rDRINK progress: "<<(int)(i*100.0f/this->indices_->size())<<"%%";
 	}
