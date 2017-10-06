@@ -78,13 +78,16 @@ template<typename PointInT, typename PointNT, typename PointOutT>
 void DRINK3Estimation<PointInT, PointNT, PointOutT>::computeFeature(PointCloudOut& out)
 {
 	//loop over indices. Each one of these points
-	//will have its descriptor calculated	
+	//will have its descriptor calculated
 	for(int i = 0; i < this->indices_->size(); ++i)
 	{
-		computePointDRINK(this->indices_->at(i), out.at(i));
-		computePointDRINK11(this->indices_->at(i), i, out.at(i));
-		computePointDRINK12(this->indices_->at(i), i, out.at(i));
-		computePointDRINK13(this->indices_->at(i), i, out.at(i));
+		//computePointDRINK(this->indices_->at(i), out.at(i));
+		computePointDRINK10(this->indices_->at(i), i, out.at(i));
+		//computePointDRINK11(this->indices_->at(i), i, out.at(i));
+		//computePointDRINK12(this->indices_->at(i), i, out.at(i));
+		//computePointDRINK13(this->indices_->at(i), i, out.at(i));
+
+		std::cout<<"\rDRINK progress: "<<(int)(i*100.0f/this->indices_->size())<<"%%";
 	}
 
 	/*
@@ -161,6 +164,90 @@ bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK(int id_kp
 	//so we keep choosing to rotate because it is a bit faster (about 0.01 s).
 	auto max = std::max_element(std::begin(descriptor.histogram), std::end(descriptor.histogram));
 	std::rotate(std::begin(descriptor.histogram), max, std::end(descriptor.histogram));
+
+	return true;
+}
+
+//------------------------------------------------------------------
+template<typename PointInT, typename PointNT, typename PointOutT>
+bool DRINK3Estimation<PointInT, PointNT, PointOutT>::computePointDRINK10(int id_kp, int id_lrf, PointOutT& descriptor)
+{
+	//Count number of points in each side of the plane,
+	//store 1 if more points are to the right side of the
+	//plane (and zero otherwise).
+
+	//initialize output
+	memset(descriptor.planes, 0, sizeof(int) * PLANES_DESC);
+
+	PointInT kp = this->input_->points[id_kp];
+
+	//translate to centroid (= kp), then rotate i.e. (Rot.Trans).x
+	Eigen::Matrix4f rot;
+	pcl::ReferenceFrame lrf = this->frames_->points[id_lrf];
+	
+	rot.col(0)<<lrf.x_axis[0],lrf.x_axis[1],lrf.x_axis[2],0.0f;
+	rot.col(1)<<lrf.y_axis[0],lrf.y_axis[1],lrf.y_axis[2],0.0f;
+	rot.col(2)<<lrf.z_axis[0],lrf.z_axis[1],lrf.z_axis[2],0.0f;
+	rot.col(3)<<0.0f,0.0f,0.0f,1.0f;
+
+	//skip NaN transformations
+	if(rot(0,0) != rot(0,0)) return false;
+
+	Eigen::Matrix4f trans = Eigen::Matrix4f::Identity();
+	trans.col(3) = kp.getVector4fMap();
+
+	//TODO: this can be made faster, but lets get it right first :(
+	Eigen::Matrix4f world2lrf = (trans * rot).inverse();
+
+	//Get neighbours in a fixed radius
+	std::vector<int> k_indices; std::vector<float> k_sqr_distances;
+	this->tree_->radiusSearch(kp, this->search_radius_, k_indices, k_sqr_distances, 256);
+
+	pcl::PointCloud<PointInT> patch;
+	pcl::copyPointCloud( *this->surface_, k_indices, patch );
+
+	//patch radius is simply the distance from the keypoint to the
+	//farthest neighbour. We're guaranteed to have all the neighbours
+	//in this range, so we "know" that no plane will be such that
+	//all neighbours are to its left or its right.
+	//double bound = sqrt( *std::max_element(sqr_distances.begin(), sqr_distances.end()) );
+
+	//loop over planes, decide in which side of the plane each
+	//neighbour is.
+	for(int i = 0; i < PLANES_DESC; ++i)
+	{
+		//Current plane direction
+		Plane plane = DRINK3Estimation<PointInT,PointNT,PointOutT>::planes[i];
+		Eigen::Vector4f normal = world2lrf * plane.N;
+
+		int l_side = 0, r_side = 0;
+
+		//shift keypoint in the direction of the normal.
+		//We bound the shift so it won't go to far away,
+		//which would cause all points to be at the same side.
+		//kp + (bound * plane.O) * plane.N; -> OFFSET VERSION
+		Eigen::Vector4f center = kp.getVector4fMap();
+
+		for(int j = 0; j < patch.size(); ++j)
+		{
+			//this is inefficient and could be replaced by something faster,
+			//like copying all the neighbors into a single vector
+			//Eigen::Vector4f ngbr = this->surface_->points[ k_indices[j] ].getVector4fMap();
+			Eigen::Vector4f ngbr = patch.points[j].getVector4fMap();
+			float side = (ngbr-center).dot(normal);
+			if(side < 0) l_side++;
+			else r_side++;
+		}
+
+		descriptor.planes[i] = (r_side > l_side) ? 0 : -1;
+	}
+
+	/*
+	std::cout<<"N points: "<<k_indices.size()<<" ";
+	for(int i = 0; i < PLANES_DESC; i++)
+		std::cout<<(descriptor.planes[i] == 0 ? 0 : 1);
+	std::cout<<std::endl<<std::endl;
+	*/
 
 	return true;
 }

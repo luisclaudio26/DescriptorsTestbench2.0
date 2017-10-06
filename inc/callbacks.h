@@ -120,10 +120,7 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	//Test: L2 distance, square-rooted
 	/*
 	for(int j = 0; j < DRINK_N_BINS; j++)
-	{
-		int s = pow(lhs.histogram[j] - rhs.histogram[j], 2.0f);
-		dist += s;
-	}
+		dist += pow(lhs.histogram[j] - rhs.histogram[j], 2.0f);
 	dist = sqrt(dist);
 	*/
 
@@ -155,6 +152,10 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	}
 	*/
 
+	//ComputeDRINK10
+	for(int j = 0; j < PLANES_DESC; j++)
+		dist +=  __builtin_popcount(lhs.planes[j] ^ rhs.planes[j]);
+
 	//ComputeDRINK11
 	/*
 	for(int j = 0; j < N_MOMENTS_2D; j++)
@@ -170,9 +171,11 @@ float distDRINK(const PointOutT& lhs, const PointOutT& rhs)
 	*/
 
 	//ComputeDRINK13
+	/*
 	for(int j = 0; j < NAPS_PLANES * NAPS_MOMENTS; j++)
 		dist += pow(lhs.naps[j] - rhs.naps[j], 2.0f);
 	dist = sqrt(dist);
+	*/
 
 	return dist;
 }
